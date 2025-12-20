@@ -1,0 +1,269 @@
+:root {
+  /* Brand Colors - Primary */
+  --orange: #F27F24; /* Main orange dot - Primary CTA */
+  --yellow: #F9D423; /* Yellow dot - Accents */
+  --brown-dark: #3D2817; /* Hand gesture dark - Text/Headers */
+  --brown-mid: #6B4423; /* Hand gesture mid */
+  --cream: #E8D5B7; /* Hand gesture light */
+  
+  /* Secondary Colors */
+  --white: #FFFFFF;
+  --text-orange: #F27F24; /* For "South Indian Kerala Cuisine" text */
+  --brown-bg-deep: #140D08; /* Deep Espresso - darker background */
+  --brown-bg-dark: #1F1410; /* Dark brown - lighter surface */
+  
+  /* Semantic Color Mappings */
+  --primary: var(--orange); /* Primary CTA */
+  --primary-glow: rgba(242, 127, 36, 0.3);
+  --secondary: var(--yellow); /* Accents */
+  --accent: var(--yellow);
+  
+  /* Backgrounds - Mixed dark browns for depth */
+  --background: var(--brown-bg-deep); /* Deep Espresso as main background */
+  --surface: var(--brown-bg-dark); /* Lighter dark brown for cards/surfaces */
+  --surface-hover: rgba(31, 20, 16, 0.9); /* Slightly lighter on hover */
+  --surface-alt: rgba(20, 13, 8, 0.6); /* Deep Espresso variant for overlays */
+  
+  /* Text */
+  --text-main: var(--white);
+  --text-secondary: var(--cream);
+  --text-accent: var(--text-orange);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(31, 20, 16, 0.85); /* Mix of both dark browns */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --blur: 12px;
+
+  /* Spacing & Layout */
+  --container-width: 1200px;
+  --header-height: 80px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  
+  /* Animation */
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.4s ease;
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-main);
+  font-family: var(--font-outfit), sans-serif; /* Setup in layout */
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-fast);
+}
+
+ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Utility Classes - Glassmorphism */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+h1 { font-size: 3.5rem; letter-spacing: -0.02em; }
+h2 { font-size: 2.5rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.75rem; }
+
+p {
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: var(--orange);
+  color: var(--white);
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--orange);
+  color: var(--orange);
+}
+
+.btn-outline:hover {
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: var(--white);
+  border-color: transparent;
+}
+
+/* Layout Utilities */
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-center { text-align: center; }
+.text-primary { color: var(--primary); }
+.text-orange { color: var(--text-orange); }
+.text-brown-dark { color: var(--brown-dark); }
+.text-brown-mid { color: var(--brown-mid); }
+.mb-4 { margin-bottom: 1rem; }
+.mb-8 { margin-bottom: 2rem; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--brown-bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brown-mid);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--orange);
+}
+
+/* Select Dropdown Styling */
+select {
+  background-color: var(--brown-bg-dark) !important;
+  color: var(--white) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+select option {
+  background-color: var(--brown-bg-deep) !important;
+  color: var(--white) !important;
+  padding: 0.5rem;
+}
+
+select:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-color: var(--orange) !important;
+}
+
+/* Ensure dropdown is visible above other elements */
+select {
+  z-index: 1000;
+  position: relative;
+}
+
+/* Full screen hero section */
+.home-wrapper {
+  width: 100%;
+}
+
+.home-wrapper > section:first-child {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  position: relative;
+}
+
+/* Category Scroll Menu */
+.category-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+.category-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.category-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.category-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(242, 127, 36, 0.8);
+}

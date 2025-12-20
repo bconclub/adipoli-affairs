@@ -1,0 +1,92 @@
+.footer {
+    background: var(--surface);
+    padding: 5rem 0 0;
+    border-top: 1px solid var(--surface-hover);
+    margin-top: 4rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    padding-bottom: 4rem;
+}
+
+@media (min-width: 768px) {
+    .grid {
+        grid-template-columns: 1.5fr 1fr 1fr;
+    }
+}
+
+.brand {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.logo {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.description {
+    margin-bottom: 1.5rem;
+    max-width: 300px;
+}
+
+.socials {
+    display: flex;
+    gap: 1rem;
+}
+
+.socialLink {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+
+.socialLink:hover {
+    background: var(--primary);
+    color: #000;
+    transform: translateY(-2px);
+}
+
+.linksSection ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.linksSection a:hover {
+    color: var(--primary);
+    padding-left: 5px;
+}
+
+.contactSection address {
+    font-style: normal;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hours {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.bottomBar {
+    background: var(--background);
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--surface-hover);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
