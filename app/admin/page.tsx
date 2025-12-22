@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Edit2, X, Check, GripVertical, Star, Image as ImageIcon, Upload } from 'lucide-react';
+import { Save, Plus, Trash2, Edit2, X, Check, GripVertical, Star, Image as ImageIcon, Upload, Loader2, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { 
     loadMenuItems, 
@@ -21,6 +21,8 @@ import {
 } from '@/lib/menuData';
 import { menuData } from '@/data/menu';
 import { formatProductName } from '@/lib/utils';
+import { compressImage, getFileSize, IMAGE_DIMENSIONS } from '@/lib/imageCompression';
+import ImageCropper from '@/components/ImageCropper';
 
 // Category mapping from menu data to display categories
 const CATEGORY_MAP: Record<string, string> = {
@@ -149,7 +151,10 @@ export default function AdminPanel() {
         } else {
             addMenuItem(itemData as Omit<MenuItem, 'id'>);
         }
-        loadData();
+        // Force a small delay to ensure localStorage is updated
+        setTimeout(() => {
+            loadData();
+        }, 100);
         setEditingItem(null);
         setIsAddingNew(false);
     };
@@ -167,7 +172,10 @@ export default function AdminPanel() {
         } else {
             addFeaturedItem(itemData as Omit<FeaturedItem, 'id'>);
         }
-        loadData();
+        // Force a small delay to ensure localStorage is updated
+        setTimeout(() => {
+            loadData();
+        }, 100);
         setEditingFeatured(null);
         setIsAddingFeatured(false);
     };
@@ -536,6 +544,96 @@ function MenuItemForm({
         priceFull: typeof item?.price === 'object' ? item.price.full : undefined,
         featured: item?.featured || false,
     });
+    const [isCompressing, setIsCompressing] = useState(false);
+    const [fileSizes, setFileSizes] = useState<{ original: string; compressed: string } | null>(null);
+    const [showCropper, setShowCropper] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
+
+    // Update form data when item prop changes
+    useEffect(() => {
+        if (item) {
+            setFormData({
+                name: item.name,
+                category: item.category,
+                image: item.image,
+                desc: item.desc,
+                priceType: (item.price && typeof item.price === 'object') ? 'range' : 'single',
+                price: typeof item.price === 'number' ? item.price : (item.price?.half || item.price?.full || 0),
+                priceHalf: typeof item.price === 'object' ? item.price.half : undefined,
+                priceFull: typeof item.price === 'object' ? item.price.full : undefined,
+                featured: item.featured || false,
+            });
+        } else {
+            setFormData({
+                name: '',
+                category: categories[0],
+                image: '/images/hero.png',
+                desc: '',
+                priceType: 'single',
+                price: 0,
+                priceHalf: undefined,
+                priceFull: undefined,
+                featured: false,
+            });
+        }
+        setFileSizes(null);
+    }, [item, categories]);
+
+    const handleCropComplete = async (croppedImageDataUrl: string) => {
+        if (!originalFile || !formData.category) return;
+        
+        setShowCropper(false);
+        setIsCompressing(true);
+        
+        try {
+            // Convert data URL to File
+            const response = await fetch(croppedImageDataUrl);
+            const blob = await response.blob();
+            const croppedFile = new File([blob], originalFile.name, { type: 'image/jpeg' });
+            
+            const productName = formData.name || originalFile.name.split('.')[0];
+            
+            // Compress the cropped image
+            const result = await compressImage(croppedFile, {}, productName);
+            
+            // Upload to server
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', result.file);
+            uploadFormData.append('category', formData.category);
+            uploadFormData.append('productName', productName);
+            
+            const uploadResponse = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: uploadFormData,
+            });
+            
+            if (!uploadResponse.ok) {
+                throw new Error('Upload failed');
+            }
+            
+            const uploadData = await uploadResponse.json();
+            
+            // Add cache-busting timestamp to force image refresh
+            const imagePathWithTimestamp = `${uploadData.path}?t=${Date.now()}`;
+            
+            // Update form with the new image path
+            setFormData({ ...formData, image: uploadData.path });
+            
+            // Show file sizes
+            setFileSizes({
+                original: getFileSize(result.originalSize),
+                compressed: getFileSize(result.compressedSize),
+            });
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Failed to upload image. Please try again.');
+        } finally {
+            setIsCompressing(false);
+            setImageToCrop(null);
+            setOriginalFile(null);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -617,15 +715,51 @@ function MenuItemForm({
                             flexShrink: 0
                         }}>
                             {formData.image ? (
-                                <Image 
-                                    src={formData.image} 
-                                    alt="Preview" 
-                                    fill 
-                                    style={{ objectFit: 'cover' }}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/images/hero.png';
-                                    }}
-                                />
+                                <>
+                                    <Image 
+                                        src={`${formData.image}${formData.image.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                        alt="Preview" 
+                                        fill 
+                                        style={{ objectFit: 'cover' }}
+                                        unoptimized
+                                        key={formData.image}
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/images/hero.png';
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, image: '/images/hero.png' })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '0.5rem',
+                                            right: '0.5rem',
+                                            background: 'rgba(239, 68, 68, 0.9)',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '32px',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            color: 'white',
+                                            transition: 'all 0.2s',
+                                            zIndex: 10
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 1)';
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}
+                                        title="Remove image"
+                                    >
+                                        <XCircle size={18} />
+                                    </button>
+                                </>
                             ) : (
                                 <div style={{ 
                                     display: 'flex', 
@@ -656,19 +790,32 @@ function MenuItemForm({
                                         color: 'white'
                                     }}
                                 />
-                                <label className="btn btn-outline" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
-                                    <Upload size={18} />
-                                    Choose File
+                                <label className="btn btn-outline" style={{ cursor: isCompressing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isCompressing ? 0.6 : 1 }}>
+                                    {isCompressing ? (
+                                        <>
+                                            <Loader2 size={18} className="animate-spin" />
+                                            Compressing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={18} />
+                                            Choose File
+                                        </>
+                                    )}
                                     <input
                                         type="file"
                                         accept="image/*"
                                         style={{ display: 'none' }}
-                                        onChange={(e) => {
+                                        disabled={isCompressing}
+                                        onChange={async (e) => {
                                             const file = e.target.files?.[0];
-                                            if (file) {
+                                            if (file && formData.category) {
+                                                // Read file as data URL for cropping
                                                 const reader = new FileReader();
                                                 reader.onloadend = () => {
-                                                    setFormData({ ...formData, image: reader.result as string });
+                                                    setImageToCrop(reader.result as string);
+                                                    setOriginalFile(file);
+                                                    setShowCropper(true);
                                                 };
                                                 reader.readAsDataURL(file);
                                             }
@@ -679,6 +826,18 @@ function MenuItemForm({
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
                                 Enter image path/URL or choose a file from your computer
                             </p>
+                            {fileSizes && (
+                                <div style={{ 
+                                    fontSize: '0.85rem', 
+                                    color: 'var(--text-secondary)', 
+                                    margin: '0 0 0.5rem 0',
+                                    display: 'flex',
+                                    gap: '1rem'
+                                }}>
+                                    <span>Original: {fileSizes.original}</span>
+                                    <span>Compressed: {fileSizes.compressed}</span>
+                                </div>
+                            )}
                             
                             {/* Quick Image Select */}
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -804,6 +963,19 @@ function MenuItemForm({
                     Cancel
                 </button>
             </div>
+            
+            {showCropper && imageToCrop && (
+                <ImageCropper
+                    image={imageToCrop}
+                    aspectRatio={IMAGE_DIMENSIONS.aspectRatio}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setImageToCrop(null);
+                        setOriginalFile(null);
+                    }}
+                />
+            )}
         </form>
     );
 }
@@ -829,6 +1001,89 @@ function FeaturedItemForm({
         prepTime: item?.prepTime || '25 min',
         menuItemId: item?.menuItemId,
     });
+    const [isCompressing, setIsCompressing] = useState(false);
+    const [fileSizes, setFileSizes] = useState<{ original: string; compressed: string } | null>(null);
+    const [showCropper, setShowCropper] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
+
+    // Update form data when item prop changes
+    useEffect(() => {
+        if (item) {
+            setFormData({
+                name: item.name,
+                price: item.price,
+                image: item.image,
+                description: item.description,
+                calories: item.calories,
+                prepTime: item.prepTime,
+                menuItemId: item.menuItemId,
+            });
+        } else {
+            setFormData({
+                name: '',
+                price: '',
+                image: '/images/hero.png',
+                description: '',
+                calories: '450 cal',
+                prepTime: '25 min',
+                menuItemId: undefined,
+            });
+        }
+        setFileSizes(null);
+    }, [item]);
+
+    const handleCropComplete = async (croppedImageDataUrl: string) => {
+        if (!originalFile) return;
+        
+        setShowCropper(false);
+        setIsCompressing(true);
+        
+        try {
+            // Convert data URL to File
+            const response = await fetch(croppedImageDataUrl);
+            const blob = await response.blob();
+            const croppedFile = new File([blob], originalFile.name, { type: 'image/jpeg' });
+            
+            const productName = formData.name || originalFile.name.split('.')[0];
+            
+            // Compress the cropped image
+            const result = await compressImage(croppedFile, {}, productName);
+            
+            // Upload to server - use "featured" as category
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', result.file);
+            uploadFormData.append('category', 'featured');
+            uploadFormData.append('productName', productName);
+            
+            const uploadResponse = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: uploadFormData,
+            });
+            
+            if (!uploadResponse.ok) {
+                throw new Error('Upload failed');
+            }
+            
+            const uploadData = await uploadResponse.json();
+            
+            // Update form with the new image path
+            setFormData({ ...formData, image: uploadData.path });
+            
+            // Show file sizes
+            setFileSizes({
+                original: getFileSize(result.originalSize),
+                compressed: getFileSize(result.compressedSize),
+            });
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Failed to upload image. Please try again.');
+        } finally {
+            setIsCompressing(false);
+            setImageToCrop(null);
+            setOriginalFile(null);
+        }
+    };
 
     const handleMenuSelect = (menuItemId: number) => {
         const menuItem = menuItems.find(m => m.id === menuItemId);
@@ -935,15 +1190,51 @@ function FeaturedItemForm({
                             flexShrink: 0
                         }}>
                             {formData.image ? (
-                                <Image 
-                                    src={formData.image} 
-                                    alt="Preview" 
-                                    fill 
-                                    style={{ objectFit: 'cover' }}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/images/hero.png';
-                                    }}
-                                />
+                                <>
+                                    <Image 
+                                        src={`${formData.image}${formData.image.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                        alt="Preview" 
+                                        fill 
+                                        style={{ objectFit: 'cover' }}
+                                        unoptimized
+                                        key={formData.image}
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/images/hero.png';
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, image: '/images/hero.png' })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '0.5rem',
+                                            right: '0.5rem',
+                                            background: 'rgba(239, 68, 68, 0.9)',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '32px',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            color: 'white',
+                                            transition: 'all 0.2s',
+                                            zIndex: 10
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 1)';
+                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}
+                                        title="Remove image"
+                                    >
+                                        <XCircle size={18} />
+                                    </button>
+                                </>
                             ) : (
                                 <div style={{ 
                                     display: 'flex', 
@@ -974,19 +1265,32 @@ function FeaturedItemForm({
                                         color: 'white'
                                     }}
                                 />
-                                <label className="btn btn-outline" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
-                                    <Upload size={18} />
-                                    Choose File
+                                <label className="btn btn-outline" style={{ cursor: isCompressing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isCompressing ? 0.6 : 1 }}>
+                                    {isCompressing ? (
+                                        <>
+                                            <Loader2 size={18} className="animate-spin" />
+                                            Compressing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={18} />
+                                            Choose File
+                                        </>
+                                    )}
                                     <input
                                         type="file"
                                         accept="image/*"
                                         style={{ display: 'none' }}
-                                        onChange={(e) => {
+                                        disabled={isCompressing}
+                                        onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
+                                                // Read file as data URL for cropping
                                                 const reader = new FileReader();
                                                 reader.onloadend = () => {
-                                                    setFormData({ ...formData, image: reader.result as string });
+                                                    setImageToCrop(reader.result as string);
+                                                    setOriginalFile(file);
+                                                    setShowCropper(true);
                                                 };
                                                 reader.readAsDataURL(file);
                                             }
@@ -997,6 +1301,18 @@ function FeaturedItemForm({
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
                                 Enter image path/URL or choose a file from your computer
                             </p>
+                            {fileSizes && (
+                                <div style={{ 
+                                    fontSize: '0.85rem', 
+                                    color: 'var(--text-secondary)', 
+                                    margin: '0 0 0.5rem 0',
+                                    display: 'flex',
+                                    gap: '1rem'
+                                }}>
+                                    <span>Original: {fileSizes.original}</span>
+                                    <span>Compressed: {fileSizes.compressed}</span>
+                                </div>
+                            )}
                             
                             {/* Quick Image Select */}
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1070,6 +1386,19 @@ function FeaturedItemForm({
                     Cancel
                 </button>
             </div>
+            
+            {showCropper && imageToCrop && (
+                <ImageCropper
+                    image={imageToCrop}
+                    aspectRatio={IMAGE_DIMENSIONS.aspectRatio}
+                    onCropComplete={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setImageToCrop(null);
+                        setOriginalFile(null);
+                    }}
+                />
+            )}
         </form>
     );
 }

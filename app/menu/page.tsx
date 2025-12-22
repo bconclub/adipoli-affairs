@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
 import { menuData } from '@/data/menu';
 import { useCart } from '@/contexts/CartContext';
 import { formatProductName } from '@/lib/utils';
+import { loadMenuItems, initializeMenuItems, type MenuItem as MenuItemType } from '@/lib/menuData';
 
-interface MenuItem {
-    id: number;
-    name: string;
-    price: number | { half?: number; full?: number };
-    category: string;
-    image: string;
-    desc: string;
-}
+// Use the MenuItem type from menuData
+type MenuItem = MenuItemType;
 
 // Category mapping from menu data to display categories
 const CATEGORY_MAP: Record<string, string> = {
@@ -130,14 +125,20 @@ const transformMenuData = (): MenuItem[] => {
     return items;
 };
 
-const MENU_ITEMS: MenuItem[] = transformMenuData();
-
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
+    const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const { addItem } = useCart();
 
-    const filteredItems = MENU_ITEMS.filter(item => {
+    // Load menu items from localStorage
+    useEffect(() => {
+        const transformedItems = transformMenuData();
+        const initializedItems = initializeMenuItems(transformedItems);
+        setMenuItems(initializedItems);
+    }, []);
+
+    const filteredItems = menuItems.filter(item => {
         const matchesCategory = activeCategory === "All" || item.category === activeCategory;
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
@@ -246,8 +247,23 @@ export default function MenuPage() {
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
                 {filteredItems.map(item => (
                     <div key={item.id} className="glass-card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ position: 'relative', height: '200px' }}>
-                            <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} />
+                        <div style={{ 
+                            position: 'relative', 
+                            width: '100%', 
+                            aspectRatio: '16/9',
+                            overflow: 'hidden',
+                            backgroundColor: 'rgba(0,0,0,0.2)'
+                        }}>
+                            <Image 
+                                src={item.image} 
+                                alt={item.name} 
+                                fill 
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                style={{ 
+                                    objectFit: 'cover',
+                                    objectPosition: 'center center'
+                                }} 
+                            />
                         </div>
                         <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <div className="flex-between" style={{ marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
