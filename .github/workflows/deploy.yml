@@ -29,35 +29,6 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: List build output
-        run: |
-          echo "=== Static export output ==="
-          ls -la out/ || echo "out folder not found"
-          echo ""
-          echo "=== Out folder structure ==="
-          find out/ -type f | head -30 || echo "No files in out/"
-          echo ""
-          echo "=== Public folder (copied to out/) ==="
-          ls -la out/images/ 2>/dev/null || echo "No images folder in out/"
-
-      - name: Create deployment package info
-        run: |
-          echo "=== Files to be deployed (excluding node_modules and .git) ==="
-          find . -type f \
-            -not -path "./node_modules/*" \
-            -not -path "./.git/*" \
-            -not -path "./.next/cache/*" \
-            -not -path "./.vscode/*" \
-            -not -path "./.idea/*" \
-            -not -path "./.cursor/*" \
-            -not -name "*.md" \
-            -not -name ".env*" \
-            -not -name "tsconfig.json" \
-            -not -name "eslint.config.mjs" \
-            -not -name "next-env.d.ts" \
-            -not -name ".gitignore" | wc -l
-          echo "files will be uploaded"
-
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -65,23 +36,9 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
-          server-dir: ./domains/adipoliaffairs.com/public_html/
+          server-dir: /home/u240474838/domains/adipoliaffairs.com/public_html/
           dangerous-clean-slate: false
           log-level: verbose
-          dry-run: false
           exclude: |
             **/.git*
             **/.git*/**
-            **/node_modules/**
-            **/.env*
-            **/.env*.local
-            **/.vscode/**
-            **/.idea/**
-            **/.cursor/**
-          
-      - name: Verify deployment location
-        run: |
-          echo "=== Deployment Summary ==="
-          echo "Files deployed to: ./domains/adipoliaffairs.com/public_html/ (relative to FTP root)"
-          echo "Check the logs above for 'Uploading' messages to see actual paths"
-
