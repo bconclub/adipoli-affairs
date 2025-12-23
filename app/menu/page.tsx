@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search } from 'lucide-react';
+import { Search, Filter, X, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { useCart } from '@/contexts/CartContext';
 import { formatProductName } from '@/lib/utils';
@@ -67,8 +68,31 @@ const CATEGORIES = [
     "Milkshake",
 ];
 
-// Helper function to get image based on item name
-const getImageForItem = (name: string): string => {
+// Sanitize name for file path (same as upload API)
+const sanitizeName = (name: string | undefined | null): string => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+};
+
+// Get image path from public folder based on product name and category
+const getImagePathFromPublic = (name: string | undefined | null, category: string | undefined | null): string => {
+    if (!name || !category) return '/images/hero.png';
+    const sanitizedCategory = sanitizeName(category);
+    const sanitizedProductName = sanitizeName(name);
+    
+    if (!sanitizedCategory || !sanitizedProductName) return '/images/hero.png';
+    
+    // Return the expected path (png is most common, browser will try to load it)
+    // If it doesn't exist, we'll fall back in the component
+    return `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
+};
+
+// Fallback image based on item name
+const getFallbackImage = (name: string | undefined | null): string => {
+    if (!name) return '/images/hero.png';
     const lowerName = name.toLowerCase();
     if (lowerName.includes('chicken')) return "/images/chicken.png";
     if (lowerName.includes('beef')) return "/images/beef.png";
@@ -76,8 +100,26 @@ const getImageForItem = (name: string): string => {
     return "/images/hero.png";
 };
 
+// Helper function to get image - checks public folder first, then defaults
+const getImageForItem = (name: string | undefined | null, category: string | undefined | null): string => {
+    if (!name || !category) return '/images/hero.png';
+    
+    // First try to get from public folder based on name and category
+    const publicPath = getImagePathFromPublic(name, category);
+    
+    // Fallback to default images if needed
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('chicken') && !publicPath.includes('soup')) return "/images/chicken.png";
+    if (lowerName.includes('beef') && !publicPath.includes('soup')) return "/images/beef.png";
+    if (lowerName.includes('biryani')) return "/images/biryani.png";
+    
+    // Return the public folder path (browser will handle 404)
+    return publicPath;
+};
+
 // Helper function to generate description
-const getDescription = (name: string): string => {
+const getDescription = (name: string | undefined | null): string => {
+    if (!name) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
     return `Delicious ${name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
 };
 
@@ -97,7 +139,7 @@ const transformMenuData = (): MenuItem[] => {
                     name: "Vizhinjam Chicken Fry (Bone-in) half",
                     price: 16.99,
                     category: displayCategory,
-                    image: getImageForItem(item.name),
+                    image: getImageForItem(item.name, displayCategory),
                     desc: getDescription(item.name),
                 });
                 items.push({
@@ -105,7 +147,7 @@ const transformMenuData = (): MenuItem[] => {
                     name: "Vizhinjam Chicken Fry (Bone-in) full",
                     price: 29.99,
                     category: displayCategory,
-                    image: getImageForItem(item.name),
+                    image: getImageForItem(item.name, displayCategory),
                     desc: getDescription(item.name),
                 });
                 return;
@@ -116,7 +158,7 @@ const transformMenuData = (): MenuItem[] => {
                 name: item.name,
                 price: item.price,
                 category: displayCategory,
-                image: getImageForItem(item.name),
+                image: getImageForItem(item.name, displayCategory),
                 desc: getDescription(item.name),
             });
         });
@@ -127,22 +169,80 @@ const transformMenuData = (): MenuItem[] => {
 
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState("All");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [showFilterModal, setShowFilterModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const { addItem } = useCart();
 
-    // Load menu items from localStorage
+    // Load menu items from localStorage (same as admin panel uses)
     useEffect(() => {
-        const transformedItems = transformMenuData();
-        const initializedItems = initializeMenuItems(transformedItems);
-        setMenuItems(initializedItems);
+        const loadItems = () => {
+            // First ensure localStorage is initialized with default data if empty
+            const transformedItems = transformMenuData();
+            initializeMenuItems(transformedItems);
+            
+            // Then load the actual data from localStorage (which admin panel updates)
+            const items = loadMenuItems();
+            setMenuItems(items);
+        };
+        
+        loadItems();
+        
+        // Reload when page becomes visible (in case localStorage was updated)
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadItems();
+            }
+        };
+        
+        // Also reload on focus (when switching back to tab)
+        const handleFocus = () => {
+            loadItems();
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, []);
 
     const filteredItems = menuItems.filter(item => {
-        const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+        let matchesCategory = false;
+        if (activeCategory === "All" && selectedCategories.length === 0) {
+            matchesCategory = true;
+        } else if (activeCategory !== "All") {
+            matchesCategory = item.category === activeCategory;
+        } else if (selectedCategories.length > 0) {
+            matchesCategory = selectedCategories.includes(item.category);
+        }
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
     });
+
+    const handleCategoryToggle = (category: string) => {
+        if (category === "All") return;
+        setSelectedCategories(prev => {
+            if (prev.includes(category)) {
+                return prev.filter(c => c !== category);
+            } else {
+                return [...prev, category];
+            }
+        });
+        setActiveCategory("All");
+    };
+
+    const handleFilterApply = () => {
+        setShowFilterModal(false);
+    };
+
+    const handleClearFilters = () => {
+        setSelectedCategories([]);
+        setActiveCategory("All");
+    };
 
     const formatPrice = (price: number | { half?: number; full?: number }): string => {
         if (typeof price === 'number') {
@@ -171,11 +271,13 @@ export default function MenuPage() {
 
     const handleAddToOrder = (item: MenuItem) => {
         const price = getPriceValue(item.price);
+        // Use the same image path logic as displayed on menu
+        const imagePath = getImagePathFromPublic(item.name, item.category);
         addItem({
             id: item.id,
             name: item.name,
             price: price,
-            image: item.image,
+            image: imagePath,
         });
     };
 
@@ -206,7 +308,14 @@ export default function MenuPage() {
                     {CATEGORIES.map(cat => (
                         <button
                             key={cat}
-                            onClick={() => setActiveCategory(cat)}
+                            onClick={() => {
+                                if (cat === "All") {
+                                    handleClearFilters();
+                                } else {
+                                    setActiveCategory(cat);
+                                    setSelectedCategories([]);
+                                }
+                            }}
                             className={`btn ${activeCategory === cat ? 'btn-primary' : 'btn-outline'}`}
                             style={{ 
                                 borderRadius: '50px', 
@@ -219,6 +328,38 @@ export default function MenuPage() {
                             {cat}
                         </button>
                     ))}
+                    <button
+                        onClick={() => setShowFilterModal(true)}
+                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
+                        style={{ 
+                            borderRadius: '50px', 
+                            whiteSpace: 'nowrap', 
+                            fontSize: '0.9rem', 
+                            padding: '0.5rem 1.25rem',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <Filter size={16} />
+                        Filter
+                        {selectedCategories.length > 0 && (
+                            <span style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                            }}>
+                                {selectedCategories.length}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
                 {/* Search Bar */}
@@ -245,7 +386,11 @@ export default function MenuPage() {
             {/* Grid */}
             {filteredItems.length > 0 ? (
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                {filteredItems.map(item => (
+                {filteredItems.map(item => {
+                    // Override image path with public folder path based on name and category
+                    const imagePath = getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png';
+                    
+                    return (
                     <div key={item.id} className="glass-card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ 
                             position: 'relative', 
@@ -254,15 +399,22 @@ export default function MenuPage() {
                             overflow: 'hidden',
                             backgroundColor: 'rgba(0,0,0,0.2)'
                         }}>
-                            <Image 
-                                src={item.image} 
+                            <img 
+                                src={imagePath} 
                                 alt={item.name} 
-                                fill 
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 style={{ 
+                                    width: '100%',
+                                    height: '100%',
                                     objectFit: 'cover',
                                     objectPosition: 'center center'
-                                }} 
+                                }}
+                                onError={(e) => {
+                                    // If image from public folder doesn't exist, use fallback
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
+                                        target.src = getFallbackImage(item.name);
+                                    }
+                                }}
                             />
                         </div>
                         <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -282,13 +434,161 @@ export default function MenuPage() {
                             </button>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
             ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     <p>No items found matching your search.</p>
                 </div>
             )}
+
+            {/* Category Filter Modal */}
+            <AnimatePresence>
+                {showFilterModal && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                zIndex: 1000,
+                                backdropFilter: 'blur(4px)'
+                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowFilterModal(false)}
+                        />
+
+                        {/* Modal */}
+                        <motion.div
+                            style={{
+                                position: 'fixed',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                background: 'var(--surface)',
+                                borderRadius: '16px',
+                                padding: '2rem',
+                                maxWidth: '90vw',
+                                width: '500px',
+                                maxHeight: '80vh',
+                                overflowY: 'auto',
+                                zIndex: 1001,
+                                border: '1px solid var(--glass-border)',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+                            }}
+                            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                marginBottom: '1.5rem',
+                                paddingBottom: '1rem',
+                                borderBottom: '1px solid var(--glass-border)'
+                            }}>
+                                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Filter Categories</h2>
+                                <button
+                                    onClick={() => setShowFilterModal(false)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-main)',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            {/* Categories List */}
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                gap: '0.75rem',
+                                marginBottom: '1.5rem'
+                            }}>
+                                {CATEGORIES.filter(cat => cat !== "All").map(category => {
+                                    const isSelected = selectedCategories.includes(category);
+                                    return (
+                                        <button
+                                            key={category}
+                                            onClick={() => handleCategoryToggle(category)}
+                                            style={{
+                                                padding: '0.75rem 1rem',
+                                                borderRadius: '8px',
+                                                border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}`,
+                                                background: isSelected ? 'rgba(242, 127, 36, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                color: 'var(--text-main)',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: '0.5rem',
+                                                transition: 'all 0.2s',
+                                                fontSize: '0.9rem'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                                    e.currentTarget.style.borderColor = 'var(--primary)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                    e.currentTarget.style.borderColor = 'var(--glass-border)';
+                                                }
+                                            }}
+                                        >
+                                            <span>{category}</span>
+                                            {isSelected && <Check size={18} style={{ color: 'var(--primary)' }} />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Footer Actions */}
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '1rem',
+                                justifyContent: 'flex-end',
+                                paddingTop: '1rem',
+                                borderTop: '1px solid var(--glass-border)'
+                            }}>
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="btn btn-outline"
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    Clear All
+                                </button>
+                                <button
+                                    onClick={handleFilterApply}
+                                    className="btn btn-primary"
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -4,9 +4,90 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useEffect, useRef } from "react";
 
 export default function Home() {
   const { addItem } = useCart();
+  const videoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Load YouTube IFrame API
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+    let player: any;
+
+    // @ts-ignore
+    window.onYouTubeIframeAPIReady = () => {
+      if (videoRef.current) {
+        // @ts-ignore
+        player = new window.YT.Player(videoRef.current, {
+          videoId: 'WW0SLuX8HsI',
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            loop: 1,
+            controls: 0,
+            showinfo: 0,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            start: 8,
+            end: 15
+          },
+          events: {
+            onReady: (event: any) => {
+              event.target.seekTo(8, true);
+              event.target.playVideo();
+            },
+            onStateChange: (event: any) => {
+              // Check current time and loop between 8-15 seconds
+              const checkTime = () => {
+                if (player && player.getCurrentTime) {
+                  const currentTime = player.getCurrentTime();
+                  if (currentTime >= 15) {
+                    player.seekTo(8, true);
+                    player.playVideo();
+                  }
+                }
+              };
+              
+              // Check time every 100ms when playing
+              if (event.data === 1) { // 1 = playing
+                const interval = setInterval(() => {
+                  if (player && player.getCurrentTime) {
+                    const currentTime = player.getCurrentTime();
+                    if (currentTime >= 15) {
+                      player.seekTo(8, true);
+                      player.playVideo();
+                    }
+                  }
+                }, 100);
+                
+                // Store interval to clear later
+                // @ts-ignore
+                player._loopInterval = interval;
+              } else if (event.data === 2) { // 2 = paused
+                // @ts-ignore
+                if (player._loopInterval) {
+                  // @ts-ignore
+                  clearInterval(player._loopInterval);
+                }
+              }
+            }
+          }
+        });
+      }
+    };
+
+    return () => {
+      if (player) {
+        player.destroy();
+      }
+    };
+  }, []);
 
   const handleAddToOrder = (item: { name: string; price: string; img: string }) => {
     const price = parseFloat(item.price.replace('$', ''));
@@ -28,22 +109,45 @@ export default function Home() {
         display: 'flex', 
         alignItems: 'center', 
         width: '100%',
-        paddingTop: '80px' // Navbar height to prevent content from hiding
+        paddingTop: '80px', // Navbar height to prevent content from hiding
+        overflow: 'hidden'
       }}>
-        <Image
-          src="/images/hero.png"
-          alt="Kerala Sadhya Feast"
-          fill
-          style={{ 
-            objectFit: 'cover', 
-            zIndex: -1, 
-            filter: 'brightness(0.4)', 
+        {/* YouTube Video Background */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: -1,
+          overflow: 'hidden'
+        }}>
+          <div
+            ref={videoRef}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '100vw',
+              height: '56.25vw', // 16:9 aspect ratio
+              minHeight: '100vh',
+              minWidth: '177.77vh', // 16:9 aspect ratio
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
+            }}
+          />
+          {/* Dark overlay for text readability */}
+          <div style={{
+            position: 'absolute',
             top: 0,
-            left: 0
-          }}
-          priority
-        />
-        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <div style={{ maxWidth: '800px' }}>
             <span className="text-primary" style={{ fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem', display: 'block' }}>
               Welcome to Adipoli Affairs

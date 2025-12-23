@@ -716,15 +716,19 @@ function MenuItemForm({
                         }}>
                             {formData.image ? (
                                 <>
-                                    <Image 
-                                        src={`${formData.image}${formData.image.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                    <img 
+                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
                                         alt="Preview" 
-                                        fill 
-                                        style={{ objectFit: 'cover' }}
-                                        unoptimized
-                                        key={formData.image}
+                                        style={{ 
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
+                                        }}
                                         onError={(e) => {
-                                            (e.target as HTMLImageElement).src = '/images/hero.png';
+                                            const target = e.target as HTMLImageElement;
+                                            if (!target.src.endsWith('/images/hero.png')) {
+                                                target.src = '/images/hero.png';
+                                            }
                                         }}
                                     />
                                     <button
@@ -775,21 +779,35 @@ function MenuItemForm({
                         
                         <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.image}
-                                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                    placeholder="/images/item.png"
-                                    style={{ 
-                                        flex: 1,
-                                        padding: '0.75rem', 
-                                        borderRadius: '8px', 
-                                        background: 'rgba(255,255,255,0.05)', 
-                                        border: '1px solid rgba(255,255,255,0.1)', 
-                                        color: 'white'
-                                    }}
-                                />
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.image}
+                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="/images/item.png"
+                                        style={{ 
+                                            width: '100%',
+                                            padding: '0.75rem', 
+                                            borderRadius: '8px', 
+                                            background: 'rgba(255,255,255,0.05)', 
+                                            border: '1px solid rgba(255,255,255,0.1)', 
+                                            color: 'white'
+                                        }}
+                                    />
+                                    {formData.image && (
+                                        <div style={{ 
+                                            fontSize: '0.85rem', 
+                                            color: 'var(--text-secondary)',
+                                            padding: '0.5rem',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: '6px',
+                                            wordBreak: 'break-all'
+                                        }}>
+                                            <strong style={{ color: 'var(--text-primary)' }}>Image Path:</strong> {formData.image}
+                                        </div>
+                                    )}
+                                </div>
                                 <label className="btn btn-outline" style={{ cursor: isCompressing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isCompressing ? 0.6 : 1 }}>
                                     {isCompressing ? (
                                         <>
@@ -1191,15 +1209,19 @@ function FeaturedItemForm({
                         }}>
                             {formData.image ? (
                                 <>
-                                    <Image 
-                                        src={`${formData.image}${formData.image.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                    <img 
+                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
                                         alt="Preview" 
-                                        fill 
-                                        style={{ objectFit: 'cover' }}
-                                        unoptimized
-                                        key={formData.image}
+                                        style={{ 
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
+                                        }}
                                         onError={(e) => {
-                                            (e.target as HTMLImageElement).src = '/images/hero.png';
+                                            const target = e.target as HTMLImageElement;
+                                            if (!target.src.endsWith('/images/hero.png')) {
+                                                target.src = '/images/hero.png';
+                                            }
                                         }}
                                     />
                                     <button

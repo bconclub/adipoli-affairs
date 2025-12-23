@@ -21,10 +21,10 @@
 .cartPanel {
     position: fixed;
     top: 0;
+    left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
-    max-width: 450px;
     height: 100vh;
     background: var(--surface);
     z-index: 1000;
@@ -41,13 +41,6 @@
     }
     to {
         transform: translateX(0);
-    }
-}
-
-/* Mobile: Full screen */
-@media (max-width: 768px) {
-    .cartPanel {
-        max-width: 100%;
     }
 }
 
@@ -94,7 +87,6 @@
     flex-direction: column;
     gap: 1rem;
     min-height: 0; /* Allows flex child to shrink and enable scrolling */
-    max-height: 100%;
 }
 
 .emptyState {
@@ -225,6 +217,9 @@
     background: var(--surface);
     flex-shrink: 0;
     z-index: 10;
+    position: sticky;
+    bottom: 0;
+    width: 100%;
 }
 
 .totalSection {
