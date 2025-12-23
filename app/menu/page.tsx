@@ -186,8 +186,7 @@ export default function MenuPage() {
                 
                 // Try to initialize and load from server
                 try {
-                    await initializeMenuItems(transformedItems);
-                    const items = await loadMenuItems();
+                    const items = await initializeMenuItems(transformedItems);
                     console.log('Loaded items count from server:', items.length);
                     if (items.length > 0) {
                         setMenuItems(items);

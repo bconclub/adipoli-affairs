@@ -103,7 +103,7 @@ export async function saveFeaturedItems(items: FeaturedItem[]): Promise<boolean>
     }
 }
 
-// Initialize menu items (loads from server, initializes if empty)
+// Initialize menu items (loads from server, initializes if empty or updates descriptions)
 export async function initializeMenuItems(fullMenuItems: MenuItem[]): Promise<MenuItem[]> {
     const items = await loadMenuItems();
     
@@ -111,6 +111,28 @@ export async function initializeMenuItems(fullMenuItems: MenuItem[]): Promise<Me
     if (items.length === 0 && fullMenuItems.length > 0) {
         await saveMenuItems(fullMenuItems);
         return fullMenuItems;
+    }
+    
+    // If items exist, always update descriptions from source to ensure they're current
+    if (items.length > 0 && fullMenuItems.length > 0) {
+        const sourceMap = new Map(fullMenuItems.map(item => [item.name.toLowerCase(), item]));
+        
+        // Update descriptions from source code
+        let needsUpdate = false;
+        items.forEach(item => {
+            const sourceItem = sourceMap.get(item.name.toLowerCase());
+            if (sourceItem && sourceItem.desc) {
+                // Always update description from source code
+                if (item.desc !== sourceItem.desc) {
+                    item.desc = sourceItem.desc;
+                    needsUpdate = true;
+                }
+            }
+        });
+        
+        if (needsUpdate) {
+            await saveMenuItems(items);
+        }
     }
     
     return items;
