@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
           server-dir: /domains/adipoliaffairs.com/public_html/
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false
           log-level: verbose
           exclude: |
             **/.git*
