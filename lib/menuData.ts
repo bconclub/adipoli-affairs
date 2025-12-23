@@ -117,13 +117,13 @@ export async function initializeMenuItems(fullMenuItems: MenuItem[]): Promise<Me
     if (items.length > 0 && fullMenuItems.length > 0) {
         const sourceMap = new Map(fullMenuItems.map(item => [item.name.toLowerCase(), item]));
         
-        // Update descriptions from source code
+        // Update descriptions from source code (always sync from source)
         let needsUpdate = false;
         items.forEach(item => {
             const sourceItem = sourceMap.get(item.name.toLowerCase());
             if (sourceItem && sourceItem.desc) {
-                // Always update description from source code
-                if (item.desc !== sourceItem.desc) {
+                // Always update description from source code (handles missing or outdated descriptions)
+                if (!item.desc || item.desc !== sourceItem.desc) {
                     item.desc = sourceItem.desc;
                     needsUpdate = true;
                 }
