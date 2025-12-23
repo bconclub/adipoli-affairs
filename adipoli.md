@@ -19,6 +19,8 @@
 - **lucide-react**: `^0.562.0` - Icon library
 - **clsx**: `^2.1.1` - Conditional className utility
 - **tailwind-merge**: `^3.4.0` - Merge Tailwind CSS classes
+- **browser-image-compression**: `^2.0.2` - Client-side image compression
+- **react-easy-crop**: `^5.5.6` - Image cropping component
 
 ### Development Dependencies
 - **ESLint**: `^9` with `eslint-config-next`
@@ -56,11 +58,16 @@ Adipoli Affairs/
 │
 ├── components/                   # React components
 │   ├── Cart.module.css
-│   ├── Cart.tsx                 # Shopping cart component
+│   ├── Cart.tsx                 # Shopping cart component (sidebar on desktop, full-screen on mobile)
+│   ├── FloatingCartButton.tsx   # Mobile floating cart button
+│   ├── FloatingCartButton.module.css
 │   ├── Footer.module.css
 │   ├── Footer.tsx               # Footer component
+│   ├── ImageCropper.tsx         # Image cropping component (16:9 aspect ratio)
 │   ├── Navbar.module.css
-│   └── Navbar.tsx               # Navigation bar component
+│   ├── Navbar.tsx               # Navigation bar component
+│   ├── Toast.tsx                # Toast notification component
+│   └── Toast.module.css
 │
 ├── contexts/                     # React Context providers
 │   └── CartContext.tsx          # Shopping cart state management
@@ -69,19 +76,31 @@ Adipoli Affairs/
 │   └── menu.ts                  # Menu data
 │
 ├── lib/                          # Utility libraries
-│   └── menuData.ts              # Menu data utilities
+│   ├── imageCompression.ts      # Image compression utilities
+│   ├── imageCrop.ts              # Image cropping utilities
+│   ├── menuData.ts              # Menu data utilities
+│   └── utils.ts                 # General utilities
 │
 ├── public/                       # Static assets
+│   ├── .htaccess                # Apache configuration for static export
 │   ├── Adipoli icon.png         # Site favicon
 │   ├── Adipoli Logo V1.png      # Main logo
-│   └── images/                  # Image assets
+│   └── images/                  # Image assets (organized by category)
 │       ├── beef.png
 │       ├── biryani.png
 │       ├── chicken.png
-│       └── hero.png
+│       ├── hero.png
+│       ├── soups/               # Category-specific images
+│       ├── starters/
+│       ├── combo-specials/
+│       └── [other categories]/
 │
+├── .github/                     # GitHub configuration
+│   ├── workflows/
+│   │   └── deploy.yml           # GitHub Actions FTP deployment workflow
+│   └── DEPLOYMENT.md            # Deployment documentation
 ├── eslint.config.mjs            # ESLint configuration
-├── next.config.ts               # Next.js configuration
+├── next.config.ts               # Next.js configuration (static export)
 ├── next-env.d.ts                # Next.js TypeScript declarations
 ├── package.json                 # Dependencies and scripts
 ├── package-lock.json            # Lock file
@@ -105,11 +124,21 @@ Adipoli Affairs/
 
 ### Next.js Configuration (`next.config.ts`)
 
-Default configuration with no custom options currently set. Configuration can be extended as needed for:
-- Image optimization
-- Environment variables
-- Redirects/rewrites
-- Headers/security
+**Static Export Configuration:**
+```typescript
+{
+  output: 'export',              // Static site generation
+  images: {
+    unoptimized: true           // Required for static export
+  }
+}
+```
+
+**Key Points:**
+- Static export enabled for shared hosting deployment
+- Images are unoptimized (handled client-side)
+- No server-side features (API routes removed)
+- Build output: `out/` directory
 
 ### ESLint Configuration (`eslint.config.mjs`)
 
@@ -126,10 +155,15 @@ Available npm scripts (from `package.json`):
 
 ```bash
 npm run dev      # Start development server (http://localhost:3000)
-npm run build    # Create production build
-npm start        # Start production server
+npm run build    # Create production build (static export to ./out/)
+npm start        # Start production server (not used for static export)
 npm run lint     # Run ESLint
 ```
+
+**Build Output:**
+- Static files are generated in `./out/` directory
+- All pages are pre-rendered as static HTML
+- No server required - can be deployed to any static hosting
 
 ---
 
@@ -177,9 +211,27 @@ npm run lint     # Run ESLint
    - Links and contact details
 
 4. **Cart** (`components/Cart.tsx`):
-   - Shopping cart sidebar/overlay
+   - Shopping cart component
+   - **Desktop**: 450px sidebar that slides in from right
+   - **Mobile**: Full-screen overlay
    - Item list with quantity controls
-   - Checkout functionality
+   - Checkout button always visible (no scrolling needed on mobile)
+   - Supports base64 images and public folder images
+
+5. **FloatingCartButton** (`components/FloatingCartButton.tsx`):
+   - Mobile-only floating button
+   - Shows item count badge
+   - Only visible when cart has items and cart modal is closed
+
+6. **Toast** (`components/Toast.tsx`):
+   - Slide-in notification from bottom
+   - Shows "Item added to order!" message
+   - Auto-dismisses after 3 seconds
+
+7. **ImageCropper** (`components/ImageCropper.tsx`):
+   - 16:9 aspect ratio cropping
+   - Zoom and drag functionality
+   - Used in admin panel for product images
 
 ---
 
@@ -188,12 +240,22 @@ npm run lint     # Run ESLint
 ### Implemented Features
 1. ✅ Responsive design with mobile-first approach
 2. ✅ Shopping cart functionality with state management
-3. ✅ Image optimization using Next.js Image component
-4. ✅ SEO optimization with metadata
-5. ✅ Modern UI with glassmorphism effects
-6. ✅ Font optimization with Next.js font loader
-7. ✅ TypeScript for type safety
-8. ✅ Client and Server Components separation
+3. ✅ **Static export** for shared hosting deployment
+4. ✅ **Image management system**:
+   - Client-side compression (target: <200KB)
+   - 16:9 aspect ratio cropping
+   - Base64 storage in localStorage
+   - Public folder fallback support
+5. ✅ **Admin panel** for menu and featured items management
+6. ✅ **Toast notifications** for cart actions
+7. ✅ **Floating cart button** on mobile
+8. ✅ **Category filtering** with multi-select modal
+9. ✅ **YouTube video hero** with custom loop (8-15 seconds)
+10. ✅ SEO optimization with metadata
+11. ✅ Modern UI with glassmorphism effects
+12. ✅ Font optimization with Next.js font loader
+13. ✅ TypeScript for type safety
+14. ✅ Client-side only (no server dependencies)
 
 ### Styling Approach
 - CSS Modules for component-specific styles
@@ -249,16 +311,38 @@ npm run lint     # Run ESLint
 
 ### Production Considerations
 
-1. **Build Output**: `.next/` directory contains optimized build
-2. **Static Assets**: Served from `/public` directory
-3. **Image Optimization**: Next.js Image component handles optimization
-4. **Environment Variables**: Can be configured via `.env.local` (not in repo)
+1. **Build Output**: `out/` directory contains static HTML files
+2. **Static Assets**: Served from `/public` directory (copied to `out/` during build)
+3. **Image Handling**: 
+   - Base64 images stored in localStorage (admin panel)
+   - Public folder images for fallback
+   - Images compressed client-side before storage
+4. **No Server Required**: Fully static site, can be deployed to any static hosting
 
-### Recommended Deployment Platforms
-- **Vercel** (recommended for Next.js)
-- **Netlify**
-- **AWS Amplify**
-- **Docker** (for containerized deployment)
+### Deployment Configuration
+
+**GitHub Actions FTP Deployment** (`.github/workflows/deploy.yml`):
+- **Server**: `82.180.152.35`
+- **Server Directory**: `/home/u240474838/domains/adipoliaffairs.com/public_html/`
+- **Local Directory**: `./out/` (static export output)
+- **Clean Deployment**: `dangerous-clean-slate: true` (removes old files before upload)
+- **Build Process**:
+  1. Checkout code
+  2. Install dependencies
+  3. Build Next.js static export
+  4. Verify `.htaccess` file
+  5. Deploy to FTP server
+
+**Apache Configuration** (`public/.htaccess`):
+- Handles Next.js static export routes
+- Serves `.html` files without extension (e.g., `/menu` → `/menu.html`)
+- Custom error pages (403/404 redirect to `index.html`)
+- Client-side routing fallback
+- Compression and caching headers
+
+### Deployment Platforms
+- **Current**: Shared hosting via FTP (static export)
+- **Alternative**: Any static hosting service (Vercel, Netlify, AWS S3, etc.)
 
 ---
 
@@ -294,9 +378,22 @@ npm run lint     # Run ESLint
 1. **Component Organization**: Components are co-located with their CSS modules
 2. **Type Safety**: All components use TypeScript for type checking
 3. **Context Usage**: Cart state is managed via React Context for global access
-4. **Image Optimization**: All images use Next.js Image component for optimization
-5. **Client Components**: Marked with `"use client"` directive when needed
+4. **Image Handling**: 
+   - Admin panel: Images compressed and cropped client-side, stored as base64 in localStorage
+   - Menu/Cart: Supports both base64 and public folder images
+   - Fallback to `/images/hero.png` if image not found
+5. **Client Components**: All pages marked with `"use client"` (static export requirement)
 6. **Path Aliases**: Use `@/` prefix for imports (configured in tsconfig.json)
+7. **Static Export Limitations**:
+   - No API routes (removed for static export)
+   - No server-side features
+   - All data stored in localStorage
+   - Images stored as base64 strings
+8. **Mobile Optimizations**:
+   - Cart is full-screen on mobile with always-visible checkout button
+   - Floating cart button appears when items are added
+   - Category navigation extends edge-to-edge on mobile
+   - Increased padding to prevent content from going under header
 
 ---
 
@@ -316,16 +413,35 @@ npm run lint     # Run ESLint
 ## Build Truth Summary
 
 - **Framework**: Next.js 16.0.10 (App Router)
+- **Build Type**: Static Export (`output: 'export'`)
 - **Language**: TypeScript 5+
 - **React Version**: 19.2.1
 - **Package Manager**: npm
 - **Build Tool**: Next.js built-in (Turbopack in dev)
+- **Build Output**: `./out/` directory (static HTML files)
 - **Styling**: CSS Modules + Global CSS
-- **State Management**: React Context API
-- **Image Handling**: Next.js Image Optimization
-- **Font Loading**: Next.js Font Optimization (Google Fonts)
+- **State Management**: React Context API + localStorage
+- **Image Handling**: 
+  - Client-side compression (browser-image-compression)
+  - Client-side cropping (react-easy-crop, 16:9 aspect ratio)
+  - Base64 storage in localStorage
+  - Public folder fallback
+  - Unoptimized images (required for static export)
+- **Font Loading**: Next.js Font Optimization (Google Fonts - Outfit)
+- **Deployment**: GitHub Actions → FTP (shared hosting)
+- **Server Requirements**: None (fully static)
+- **Data Storage**: localStorage (menu items, featured items, cart)
+
+## Key Architecture Decisions
+
+1. **Static Export**: Chosen for shared hosting compatibility, no server required
+2. **Base64 Images**: Stored in localStorage to avoid server-side file management
+3. **Client-Side Image Processing**: Compression and cropping done in browser before storage
+4. **Responsive Cart**: Different UX for desktop (sidebar) vs mobile (full-screen)
+5. **Toast Notifications**: Non-intrusive bottom slide-in notifications
+6. **Category Filtering**: Multi-select modal for flexible menu browsing
 
 ---
 
-*Last Updated: Generated from current project structure*
+*Last Updated: December 2024 - Static Export Build*
 
