@@ -33,12 +33,35 @@ jobs:
         run: |
           echo "=== Build output structure ==="
           ls -la .next/ || echo ".next folder not found"
+          ls -la .next/standalone/ 2>/dev/null || echo "No standalone build"
+          ls -la .next/static/ 2>/dev/null || echo "No static build"
           echo ""
           echo "=== Public folder ==="
           ls -la public/ || echo "public folder not found"
           echo ""
           echo "=== Root files ==="
           ls -la | head -20
+          echo ""
+          echo "=== Checking what will be deployed ==="
+          find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./.next/cache/*" | head -30
+
+      - name: Create deployment package info
+        run: |
+          echo "=== Files to be deployed (excluding node_modules and .git) ==="
+          find . -type f \
+            -not -path "./node_modules/*" \
+            -not -path "./.git/*" \
+            -not -path "./.next/cache/*" \
+            -not -path "./.vscode/*" \
+            -not -path "./.idea/*" \
+            -not -path "./.cursor/*" \
+            -not -name "*.md" \
+            -not -name ".env*" \
+            -not -name "tsconfig.json" \
+            -not -name "eslint.config.mjs" \
+            -not -name "next-env.d.ts" \
+            -not -name ".gitignore" | wc -l
+          echo "files will be uploaded"
 
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -71,4 +94,7 @@ jobs:
             **/eslint.config.mjs
             **/next-env.d.ts
             **/.gitignore
+            **/.next/trace
+            **/.next/routes-manifest.json
+            **/.next/prerender-manifest.json
 
