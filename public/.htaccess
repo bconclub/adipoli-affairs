@@ -1,15 +1,44 @@
 # Enable Rewrite Engine
 RewriteEngine On
 
-# Handle client-side routing - redirect all requests to index.html if file doesn't exist
+# Allow access to all files (prevent 403 errors)
+Options -Indexes +FollowSymLinks
+
+# Set default index file
+DirectoryIndex index.html
+
+# Handle Next.js static export routes
+# Priority 1: If requesting a file that exists, serve it directly
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Priority 2: If requesting a directory that exists, serve index.html from it
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.*)$ $1/index.html [L]
+
+# Priority 3: Handle routes without trailing slash - try .html file first
+# Example: /menu -> /menu.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} ^/([^/]+)/?$
+RewriteCond %{DOCUMENT_ROOT}/%1.html -f
+RewriteRule ^([^/]+)/?$ /$1.html [L]
+
+# Priority 4: Handle routes with trailing slash - try index.html in subdirectory
+# Example: /menu/ -> /menu/index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} ^/([^/]+)/?$
+RewriteCond %{DOCUMENT_ROOT}/%1/index.html -f
+RewriteRule ^([^/]+)/?$ /$1/index.html [L]
+
+# Priority 5: Fallback - redirect all other requests to index.html for client-side routing
 # This allows Next.js client-side routing to work properly
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/index.html$
 RewriteRule ^(.*)$ /index.html [L]
-
-# Set default index file
-DirectoryIndex index.html
 
 # Enable compression
 <IfModule mod_deflate.c>
@@ -44,4 +73,3 @@ DirectoryIndex index.html
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
 </IfModule>
-
