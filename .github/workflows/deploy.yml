@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./out/
-          server-dir: /files/domains/adipoliaffairs.com/public_html/
+          server-dir: /home/u240474838/domains/adipoliaffairs.com/public_html/
           dangerous-clean-slate: true
           log-level: verbose
           exclude: |
