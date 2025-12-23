@@ -16,13 +16,20 @@ import {
     deleteFeaturedItem,
     reorderFeaturedItems,
     initializeMenuItems,
+    uploadImage,
     type MenuItem,
     type FeaturedItem
 } from '@/lib/menuData';
 import { menuData } from '@/data/menu';
 import { formatProductName } from '@/lib/utils';
-import { compressImage, getFileSize, IMAGE_DIMENSIONS } from '@/lib/imageCompression';
 import ImageCropper from '@/components/ImageCropper';
+
+// Standard 16:9 image dimensions for cropping
+const IMAGE_DIMENSIONS = {
+    width: 1920,
+    height: 1080,
+    aspectRatio: 16 / 9,
+};
 
 // Category mapping from menu data to display categories
 const CATEGORY_MAP: Record<string, string> = {
@@ -149,25 +156,28 @@ export default function AdminPanel() {
         }
     }, [editingItem, isAddingNew]);
 
-    const loadData = () => {
-        // Initialize menu items from data/menu.ts if not already initialized
-        const transformedItems = transformMenuData();
-        const initializedItems = initializeMenuItems(transformedItems);
-        setMenuItems(initializedItems);
-        setFeaturedItems(loadFeaturedItems());
+    const loadData = async () => {
+        try {
+            // Initialize menu items from data/menu.ts if not already initialized
+            const transformedItems = transformMenuData();
+            const initializedItems = await initializeMenuItems(transformedItems);
+            setMenuItems(initializedItems);
+            const featured = await loadFeaturedItems();
+            setFeaturedItems(featured);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            alert('Failed to load data. Please refresh the page.');
+        }
     };
 
-    const handleSaveMenuItem = (itemData: Partial<MenuItem>) => {
+    const handleSaveMenuItem = async (itemData: Partial<MenuItem>) => {
         try {
             if (editingItem) {
-                updateMenuItem(editingItem.id, itemData);
+                await updateMenuItem(editingItem.id, itemData);
             } else {
-                addMenuItem(itemData as Omit<MenuItem, 'id'>);
+                await addMenuItem(itemData as Omit<MenuItem, 'id'>);
             }
-            // Force a small delay to ensure localStorage is updated
-            setTimeout(() => {
-                loadData();
-            }, 100);
+            await loadData();
             setEditingItem(null);
             setIsAddingNew(false);
         } catch (error) {
@@ -176,31 +186,33 @@ export default function AdminPanel() {
         }
     };
 
-    const handleDeleteMenuItem = (id: number) => {
+    const handleDeleteMenuItem = async (id: number) => {
         if (confirm('Are you sure you want to delete this item?')) {
-            deleteMenuItem(id);
-            loadData();
+            await deleteMenuItem(id);
+            await loadData();
         }
     };
 
-    const handleSaveFeatured = (itemData: Partial<FeaturedItem>) => {
-        if (editingFeatured) {
-            updateFeaturedItem(editingFeatured.id, itemData);
-        } else {
-            addFeaturedItem(itemData as Omit<FeaturedItem, 'id'>);
+    const handleSaveFeatured = async (itemData: Partial<FeaturedItem>) => {
+        try {
+            if (editingFeatured) {
+                await updateFeaturedItem(editingFeatured.id, itemData);
+            } else {
+                await addFeaturedItem(itemData as Omit<FeaturedItem, 'id'>);
+            }
+            await loadData();
+            setEditingFeatured(null);
+            setIsAddingFeatured(false);
+        } catch (error) {
+            console.error('Error saving featured item:', error);
+            alert('Failed to save featured item. Please check the console for details.');
         }
-        // Force a small delay to ensure localStorage is updated
-        setTimeout(() => {
-            loadData();
-        }, 100);
-        setEditingFeatured(null);
-        setIsAddingFeatured(false);
     };
 
-    const handleDeleteFeatured = (id: number) => {
+    const handleDeleteFeatured = async (id: number) => {
         if (confirm('Are you sure you want to delete this featured item?')) {
-            deleteFeaturedItem(id);
-            loadData();
+            await deleteFeaturedItem(id);
+            await loadData();
         }
     };
 
@@ -410,17 +422,17 @@ export default function AdminPanel() {
                                 index={index}
                                 onEdit={() => setEditingFeatured(item)}
                                 onDelete={() => handleDeleteFeatured(item.id)}
-                                onMoveUp={index > 0 ? () => {
+                                onMoveUp={index > 0 ? async () => {
                                     const newOrder = [...featuredItems];
                                     [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-                                    reorderFeaturedItems(newOrder);
-                                    loadData();
+                                    await reorderFeaturedItems(newOrder);
+                                    await loadData();
                                 } : undefined}
-                                onMoveDown={index < featuredItems.length - 1 ? () => {
+                                onMoveDown={index < featuredItems.length - 1 ? async () => {
                                     const newOrder = [...featuredItems];
                                     [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-                                    reorderFeaturedItems(newOrder);
-                                    loadData();
+                                    await reorderFeaturedItems(newOrder);
+                                    await loadData();
                                 } : undefined}
                             />
                         ))}
@@ -563,8 +575,7 @@ function MenuItemForm({
         priceFull: typeof item?.price === 'object' ? item.price.full : undefined,
         featured: item?.featured || false,
     });
-    const [isCompressing, setIsCompressing] = useState(false);
-    const [fileSizes, setFileSizes] = useState<{ original: string; compressed: string } | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [showCropper, setShowCropper] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
     const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -596,14 +607,13 @@ function MenuItemForm({
                 featured: false,
             });
         }
-        setFileSizes(null);
     }, [item, categories]);
 
     const handleCropComplete = async (croppedImageDataUrl: string) => {
         if (!originalFile || !formData.category) return;
         
         setShowCropper(false);
-        setIsCompressing(true);
+        setIsUploading(true);
         
         try {
             // Convert data URL to File
@@ -613,40 +623,23 @@ function MenuItemForm({
             
             const productName = formData.name || originalFile.name.split('.')[0];
             
-            // Compress the cropped image
-            const result = await compressImage(croppedFile, {}, productName);
+            // Upload to server via PHP endpoint (no compression)
+            const imagePath = await uploadImage(croppedFile, formData.category, productName);
             
-            // For static export, save as base64 data URL instead of uploading to server
-            // Convert compressed file to base64
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                
-                // Update form with the base64 image data
-                setFormData({ ...formData, image: base64String });
-                
-                // Show file sizes
-                setFileSizes({
-                    original: getFileSize(result.originalSize),
-                    compressed: getFileSize(result.compressedSize),
-                });
-                
-                setIsCompressing(false);
-                setImageToCrop(null);
-                setOriginalFile(null);
-            };
-            reader.onerror = () => {
-                console.error('Failed to read file');
-                alert('Failed to process image. Please try again.');
-                setIsCompressing(false);
-                setImageToCrop(null);
-                setOriginalFile(null);
-            };
-            reader.readAsDataURL(result.file);
+            if (imagePath) {
+                // Update form with the image path
+                setFormData({ ...formData, image: imagePath });
+            } else {
+                alert('Failed to upload image. Please try again.');
+            }
+            
+            setIsUploading(false);
+            setImageToCrop(null);
+            setOriginalFile(null);
         } catch (error) {
-            console.error('Image processing error:', error);
-            alert('Failed to process image. Please try again.');
-            setIsCompressing(false);
+            console.error('Image upload error:', error);
+            alert('Failed to upload image. Please try again.');
+            setIsUploading(false);
             setImageToCrop(null);
             setOriginalFile(null);
         }
@@ -734,7 +727,7 @@ function MenuItemForm({
                             {formData.image ? (
                                 <>
                                     <img 
-                                        src={formData.image.startsWith('data:image/') ? formData.image : (formData.image.startsWith('/') ? formData.image : `/${formData.image}`)}
+                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
                                         alt="Preview" 
                                         style={{ 
                                             width: '100%',
@@ -822,18 +815,16 @@ function MenuItemForm({
                                             wordBreak: 'break-all'
                                         }}>
                                             <strong style={{ color: 'var(--text-primary)' }}>Image:</strong> {
-                                                formData.image.startsWith('data:image/') 
-                                                    ? 'Base64 Image (stored in localStorage)' 
-                                                    : formData.image
+                                                formData.image
                                             }
                                         </div>
                                     )}
                                 </div>
-                                <label className="btn btn-outline" style={{ cursor: isCompressing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isCompressing ? 0.6 : 1 }}>
-                                    {isCompressing ? (
+                                <label className="btn btn-outline" style={{ cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isUploading ? 0.6 : 1 }}>
+                                    {isUploading ? (
                                         <>
                                             <Loader2 size={18} className="animate-spin" />
-                                            Compressing...
+                                            Uploading...
                                         </>
                                     ) : (
                                         <>
@@ -845,7 +836,7 @@ function MenuItemForm({
                                         type="file"
                                         accept="image/*"
                                         style={{ display: 'none' }}
-                                        disabled={isCompressing}
+                                        disabled={isUploading}
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if (file && formData.category) {
@@ -865,18 +856,6 @@ function MenuItemForm({
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
                                 Enter image path/URL or choose a file from your computer
                             </p>
-                            {fileSizes && (
-                                <div style={{ 
-                                    fontSize: '0.85rem', 
-                                    color: 'var(--text-secondary)', 
-                                    margin: '0 0 0.5rem 0',
-                                    display: 'flex',
-                                    gap: '1rem'
-                                }}>
-                                    <span>Original: {fileSizes.original}</span>
-                                    <span>Compressed: {fileSizes.compressed}</span>
-                                </div>
-                            )}
                             
                             {/* Quick Image Select */}
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1050,8 +1029,7 @@ function FeaturedItemForm({
         prepTime: item?.prepTime || '25 min',
         menuItemId: item?.menuItemId,
     });
-    const [isCompressing, setIsCompressing] = useState(false);
-    const [fileSizes, setFileSizes] = useState<{ original: string; compressed: string } | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [showCropper, setShowCropper] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
     const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -1079,14 +1057,13 @@ function FeaturedItemForm({
                 menuItemId: undefined,
             });
         }
-        setFileSizes(null);
     }, [item]);
 
     const handleCropComplete = async (croppedImageDataUrl: string) => {
         if (!originalFile) return;
         
         setShowCropper(false);
-        setIsCompressing(true);
+        setIsUploading(true);
         
         try {
             // Convert data URL to File
@@ -1096,40 +1073,25 @@ function FeaturedItemForm({
             
             const productName = formData.name || originalFile.name.split('.')[0];
             
-            // Compress the cropped image
-            const result = await compressImage(croppedFile, {}, productName);
+            // Upload to server via PHP endpoint (no compression)
+            // Use a default category for featured items if needed
+            const category = 'featured';
+            const imagePath = await uploadImage(croppedFile, category, productName);
             
-            // For static export, save as base64 data URL instead of uploading to server
-            // Convert compressed file to base64
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                
-                // Update form with the base64 image data
-                setFormData({ ...formData, image: base64String });
-                
-                // Show file sizes
-                setFileSizes({
-                    original: getFileSize(result.originalSize),
-                    compressed: getFileSize(result.compressedSize),
-                });
-                
-                setIsCompressing(false);
-                setImageToCrop(null);
-                setOriginalFile(null);
-            };
-            reader.onerror = () => {
-                console.error('Failed to read file');
-                alert('Failed to process image. Please try again.');
-                setIsCompressing(false);
-                setImageToCrop(null);
-                setOriginalFile(null);
-            };
-            reader.readAsDataURL(result.file);
+            if (imagePath) {
+                // Update form with the image path
+                setFormData({ ...formData, image: imagePath });
+            } else {
+                alert('Failed to upload image. Please try again.');
+            }
+            
+            setIsUploading(false);
+            setImageToCrop(null);
+            setOriginalFile(null);
         } catch (error) {
-            console.error('Image processing error:', error);
-            alert('Failed to process image. Please try again.');
-            setIsCompressing(false);
+            console.error('Image upload error:', error);
+            alert('Failed to upload image. Please try again.');
+            setIsUploading(false);
             setImageToCrop(null);
             setOriginalFile(null);
         }
@@ -1242,7 +1204,7 @@ function FeaturedItemForm({
                             {formData.image ? (
                                 <>
                                     <img 
-                                        src={formData.image.startsWith('data:image/') ? formData.image : (formData.image.startsWith('/') ? formData.image : `/${formData.image}`)}
+                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
                                         alt="Preview" 
                                         style={{ 
                                             width: '100%',
@@ -1319,11 +1281,11 @@ function FeaturedItemForm({
                                         color: 'white'
                                     }}
                                 />
-                                <label className="btn btn-outline" style={{ cursor: isCompressing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isCompressing ? 0.6 : 1 }}>
-                                    {isCompressing ? (
+                                <label className="btn btn-outline" style={{ cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isUploading ? 0.6 : 1 }}>
+                                    {isUploading ? (
                                         <>
                                             <Loader2 size={18} className="animate-spin" />
-                                            Compressing...
+                                            Uploading...
                                         </>
                                     ) : (
                                         <>
@@ -1335,7 +1297,7 @@ function FeaturedItemForm({
                                         type="file"
                                         accept="image/*"
                                         style={{ display: 'none' }}
-                                        disabled={isCompressing}
+                                        disabled={isUploading}
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
@@ -1355,18 +1317,6 @@ function FeaturedItemForm({
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
                                 Enter image path/URL or choose a file from your computer
                             </p>
-                            {fileSizes && (
-                                <div style={{ 
-                                    fontSize: '0.85rem', 
-                                    color: 'var(--text-secondary)', 
-                                    margin: '0 0 0.5rem 0',
-                                    display: 'flex',
-                                    gap: '1rem'
-                                }}>
-                                    <span>Original: {fileSizes.original}</span>
-                                    <span>Compressed: {fileSizes.compressed}</span>
-                                </div>
-                            )}
                             
                             {/* Quick Image Select */}
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>

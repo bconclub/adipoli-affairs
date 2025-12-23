@@ -1,4 +1,4 @@
-// Menu data management with localStorage persistence
+// Menu data management with server-side file storage via PHP API
 
 export interface MenuItem {
     id: number;
@@ -21,193 +21,186 @@ export interface FeaturedItem {
     menuItemId?: number; // Link to menu item if applicable
 }
 
-const MENU_STORAGE_KEY = 'adipoli_menu_items';
-const FEATURED_STORAGE_KEY = 'adipoli_featured_items';
+const API_BASE = '/api';
 
-// Initialize with full menu items - this will be populated on first load
-export function initializeMenuItems(fullMenuItems: MenuItem[]): MenuItem[] {
-    if (typeof window === 'undefined') return fullMenuItems;
-    
-    // Check if localStorage has items
-    const stored = localStorage.getItem(MENU_STORAGE_KEY);
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed;
-            }
-        } catch (e) {
-            console.error('Error parsing stored menu items:', e);
+// Load menu items from server
+export async function loadMenuItems(): Promise<MenuItem[]> {
+    try {
+        const response = await fetch(`${API_BASE}/get-menu.php`);
+        if (!response.ok) {
+            console.error('Failed to load menu items');
+            return [];
         }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error loading menu items:', error);
+        return [];
     }
+}
+
+// Save menu items to server
+export async function saveMenuItems(items: MenuItem[]): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_BASE}/save-menu.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ items }),
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Failed to save menu items:', error);
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving menu items:', error);
+        return false;
+    }
+}
+
+// Load featured items from server
+export async function loadFeaturedItems(): Promise<FeaturedItem[]> {
+    try {
+        const response = await fetch(`${API_BASE}/get-featured.php`);
+        if (!response.ok) {
+            console.error('Failed to load featured items');
+            return [];
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error loading featured items:', error);
+        return [];
+    }
+}
+
+// Save featured items to server
+export async function saveFeaturedItems(items: FeaturedItem[]): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_BASE}/save-featured.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ items }),
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Failed to save featured items:', error);
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving featured items:', error);
+        return false;
+    }
+}
+
+// Initialize menu items (loads from server, initializes if empty)
+export async function initializeMenuItems(fullMenuItems: MenuItem[]): Promise<MenuItem[]> {
+    const items = await loadMenuItems();
     
-    // Initialize with defaults if nothing stored
-    if (fullMenuItems.length > 0) {
-        saveMenuItems(fullMenuItems);
+    // If no items exist, initialize with defaults
+    if (items.length === 0 && fullMenuItems.length > 0) {
+        await saveMenuItems(fullMenuItems);
         return fullMenuItems;
     }
     
-    return [];
-}
-
-// Get all default menu items for initialization
-export function getDefaultMenuItems(): MenuItem[] {
-    return DEFAULT_MENU_ITEMS;
-}
-
-// Default menu items (will be overridden by initialization)
-const DEFAULT_MENU_ITEMS: MenuItem[] = [];
-
-// Default featured items
-const DEFAULT_FEATURED_ITEMS: FeaturedItem[] = [
-    {
-        id: 1,
-        name: "Nidhi Chicken",
-        price: "$24.99",
-        image: "/images/chicken.png",
-        description: "Our signature chicken curry, slow-cooked with roasted spices organic hen.",
-        calories: "450 cal",
-        prepTime: "25 min"
-    },
-    {
-        id: 2,
-        name: "Chatti Biryani",
-        price: "$28.50",
-        image: "/images/biryani.png",
-        description: "Traditional clay-pot biryani layered with aromatic rice and tender meat.",
-        calories: "600 cal",
-        prepTime: "30 min"
-    },
-    {
-        id: 3,
-        name: "Kerala Beef Fry",
-        price: "$22.00",
-        image: "/images/beef.png",
-        description: "Iconic spicy beef roast with coconut slices and curry leaves.",
-        calories: "500 cal",
-        prepTime: "15 min"
-    },
-];
-
-// Load menu items from localStorage or return defaults
-export function loadMenuItems(): MenuItem[] {
-    if (typeof window === 'undefined') return [];
-    
-    try {
-        const stored = localStorage.getItem(MENU_STORAGE_KEY);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed;
-            }
-        }
-    } catch (e) {
-        console.error('Error loading menu items:', e);
-    }
-    
-    // Return empty array if nothing stored (will be initialized by initializeMenuItems)
-    return [];
-}
-
-// Save menu items to localStorage
-export function saveMenuItems(items: MenuItem[]): void {
-    if (typeof window === 'undefined') return;
-    
-    try {
-        localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-        console.error('Error saving menu items:', e);
-    }
-}
-
-// Load featured items from localStorage or return defaults
-export function loadFeaturedItems(): FeaturedItem[] {
-    if (typeof window === 'undefined') return DEFAULT_FEATURED_ITEMS;
-    
-    try {
-        const stored = localStorage.getItem(FEATURED_STORAGE_KEY);
-        if (stored) {
-            return JSON.parse(stored);
-        }
-    } catch (e) {
-        console.error('Error loading featured items:', e);
-    }
-    
-    // Initialize with defaults if nothing stored
-    saveFeaturedItems(DEFAULT_FEATURED_ITEMS);
-    return DEFAULT_FEATURED_ITEMS;
-}
-
-// Save featured items to localStorage
-export function saveFeaturedItems(items: FeaturedItem[]): void {
-    if (typeof window === 'undefined') return;
-    
-    try {
-        localStorage.setItem(FEATURED_STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-        console.error('Error saving featured items:', e);
-    }
+    return items;
 }
 
 // Menu item operations
-export function addMenuItem(item: Omit<MenuItem, 'id'>): MenuItem {
-    const items = loadMenuItems();
-    const newId = Math.max(...items.map(i => i.id), 0) + 1;
+export async function addMenuItem(item: Omit<MenuItem, 'id'>): Promise<MenuItem | null> {
+    const items = await loadMenuItems();
+    const newId = items.length > 0 ? Math.max(...items.map(i => i.id), 0) + 1 : 1;
     const newItem = { ...item, id: newId };
     items.push(newItem);
-    saveMenuItems(items);
-    return newItem;
+    
+    const success = await saveMenuItems(items);
+    return success ? newItem : null;
 }
 
-export function updateMenuItem(id: number, updates: Partial<MenuItem>): MenuItem | null {
-    const items = loadMenuItems();
+export async function updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | null> {
+    const items = await loadMenuItems();
     const index = items.findIndex(i => i.id === id);
     if (index === -1) return null;
     
     items[index] = { ...items[index], ...updates };
-    saveMenuItems(items);
-    return items[index];
+    const success = await saveMenuItems(items);
+    return success ? items[index] : null;
 }
 
-export function deleteMenuItem(id: number): boolean {
-    const items = loadMenuItems();
+export async function deleteMenuItem(id: number): Promise<boolean> {
+    const items = await loadMenuItems();
     const filtered = items.filter(i => i.id !== id);
     if (filtered.length === items.length) return false;
     
-    saveMenuItems(filtered);
-    return true;
+    return await saveMenuItems(filtered);
 }
 
 // Featured item operations
-export function addFeaturedItem(item: Omit<FeaturedItem, 'id'>): FeaturedItem {
-    const items = loadFeaturedItems();
-    const newId = Math.max(...items.map(i => i.id), 0) + 1;
+export async function addFeaturedItem(item: Omit<FeaturedItem, 'id'>): Promise<FeaturedItem | null> {
+    const items = await loadFeaturedItems();
+    const newId = items.length > 0 ? Math.max(...items.map(i => i.id), 0) + 1 : 1;
     const newItem = { ...item, id: newId };
     items.push(newItem);
-    saveFeaturedItems(items);
-    return newItem;
+    
+    const success = await saveFeaturedItems(items);
+    return success ? newItem : null;
 }
 
-export function updateFeaturedItem(id: number, updates: Partial<FeaturedItem>): FeaturedItem | null {
-    const items = loadFeaturedItems();
+export async function updateFeaturedItem(id: number, updates: Partial<FeaturedItem>): Promise<FeaturedItem | null> {
+    const items = await loadFeaturedItems();
     const index = items.findIndex(i => i.id === id);
     if (index === -1) return null;
     
     items[index] = { ...items[index], ...updates };
-    saveFeaturedItems(items);
-    return items[index];
+    const success = await saveFeaturedItems(items);
+    return success ? items[index] : null;
 }
 
-export function deleteFeaturedItem(id: number): boolean {
-    const items = loadFeaturedItems();
+export async function deleteFeaturedItem(id: number): Promise<boolean> {
+    const items = await loadFeaturedItems();
     const filtered = items.filter(i => i.id !== id);
     if (filtered.length === items.length) return false;
     
-    saveFeaturedItems(filtered);
-    return true;
+    return await saveFeaturedItems(filtered);
 }
 
-export function reorderFeaturedItems(newOrder: FeaturedItem[]): void {
-    saveFeaturedItems(newOrder);
+export async function reorderFeaturedItems(newOrder: FeaturedItem[]): Promise<boolean> {
+    return await saveFeaturedItems(newOrder);
 }
 
+// Upload image to server
+export async function uploadImage(file: File, category: string, productName: string): Promise<string | null> {
+    try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('category', category);
+        formData.append('productName', productName);
+        
+        const response = await fetch(`${API_BASE}/upload-image.php`, {
+            method: 'POST',
+            body: formData,
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Failed to upload image:', error);
+            return null;
+        }
+        
+        const result = await response.json();
+        return result.success ? result.path : null;
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        return null;
+    }
+}

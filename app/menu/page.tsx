@@ -175,21 +175,25 @@ export default function MenuPage() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const { addItem } = useCart();
 
-    // Load menu items from localStorage (same as admin panel uses)
+    // Load menu items from server API
     useEffect(() => {
-        const loadItems = () => {
-            // First ensure localStorage is initialized with default data if empty
-            const transformedItems = transformMenuData();
-            initializeMenuItems(transformedItems);
-            
-            // Then load the actual data from localStorage (which admin panel updates)
-            const items = loadMenuItems();
-            setMenuItems(items);
+        const loadItems = async () => {
+            try {
+                // First ensure server is initialized with default data if empty
+                const transformedItems = transformMenuData();
+                await initializeMenuItems(transformedItems);
+                
+                // Then load the actual data from server (which admin panel updates)
+                const items = await loadMenuItems();
+                setMenuItems(items);
+            } catch (error) {
+                console.error('Error loading menu items:', error);
+            }
         };
         
         loadItems();
         
-        // Reload when page becomes visible (in case localStorage was updated)
+        // Reload when page becomes visible (in case server data was updated)
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 loadItems();

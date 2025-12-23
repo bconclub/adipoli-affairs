@@ -14,7 +14,15 @@ export default function FeaturedPage() {
     const [items, setItems] = useState<FeaturedItem[]>([]);
     
     useEffect(() => {
-        setItems(loadFeaturedItems());
+        const loadItems = async () => {
+            try {
+                const items = await loadFeaturedItems();
+                setItems(items);
+            } catch (error) {
+                console.error('Error loading featured items:', error);
+            }
+        };
+        loadItems();
     }, []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
