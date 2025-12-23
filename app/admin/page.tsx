@@ -81,8 +81,9 @@ const getImageForItem = (name: string): string => {
 };
 
 // Helper function to generate description
-const getDescription = (name: string): string => {
-    return `Delicious ${name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
+const getDescription = (item: { name: string; description?: string }): string => {
+    if (item.description) return item.description;
+    return `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
 };
 
 // Transform menu data to MenuItem format
@@ -102,7 +103,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 16.99,
                     category: displayCategory,
                     image: getImageForItem(item.name),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 items.push({
                     id: id++,
@@ -110,7 +111,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 29.99,
                     category: displayCategory,
                     image: getImageForItem(item.name),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 return;
             }
@@ -121,7 +122,7 @@ const transformMenuData = (): MenuItem[] => {
                 price: item.price,
                 category: displayCategory,
                 image: getImageForItem(item.name),
-                desc: getDescription(item.name),
+                desc: getDescription(item),
             });
         });
     });

@@ -118,9 +118,10 @@ const getImageForItem = (name: string | undefined | null, category: string | und
 };
 
 // Helper function to generate description
-const getDescription = (name: string | undefined | null): string => {
-    if (!name) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
-    return `Delicious ${name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
+const getDescription = (item: { name: string; description?: string } | null | undefined): string => {
+    if (!item) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
+    if (item.description && item.description.trim()) return item.description;
+    return `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
 };
 
 // Transform menu data to MenuItem format
@@ -140,7 +141,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 16.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 items.push({
                     id: id++,
@@ -148,7 +149,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 29.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 return;
             }
@@ -159,7 +160,7 @@ const transformMenuData = (): MenuItem[] => {
                 price: item.price,
                 category: displayCategory,
                 image: getImageForItem(item.name, displayCategory),
-                desc: getDescription(item.name),
+                desc: getDescription(item),
             });
         });
     });
@@ -181,13 +182,33 @@ export default function MenuPage() {
             try {
                 // First ensure server is initialized with default data if empty
                 const transformedItems = transformMenuData();
-                await initializeMenuItems(transformedItems);
+                console.log('Transformed items count:', transformedItems.length);
                 
-                // Then load the actual data from server (which admin panel updates)
-                const items = await loadMenuItems();
-                setMenuItems(items);
+                // Try to initialize and load from server
+                try {
+                    await initializeMenuItems(transformedItems);
+                    const items = await loadMenuItems();
+                    console.log('Loaded items count from server:', items.length);
+                    if (items.length > 0) {
+                        setMenuItems(items);
+                        return;
+                    }
+                } catch (apiError) {
+                    console.warn('API not available, using default data:', apiError);
+                }
+                
+                // Fallback: use transformed items if API fails
+                console.log('Using transformed menu items as fallback');
+                setMenuItems(transformedItems);
             } catch (error) {
                 console.error('Error loading menu items:', error);
+                // Final fallback: try to use transformed items
+                try {
+                    const transformedItems = transformMenuData();
+                    setMenuItems(transformedItems);
+                } catch (transformError) {
+                    console.error('Error transforming menu data:', transformError);
+                }
             }
         };
         
