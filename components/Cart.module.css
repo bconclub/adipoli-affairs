@@ -9,6 +9,13 @@
     animation: fadeIn 0.3s ease;
 }
 
+/* Desktop: Slightly lighter backdrop for sidebar */
+@media (min-width: 769px) {
+    .backdrop {
+        background: rgba(0, 0, 0, 0.6);
+    }
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -21,7 +28,6 @@
 .cartPanel {
     position: fixed;
     top: 0;
-    left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
@@ -33,6 +39,15 @@
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease;
     overflow: hidden;
+}
+
+/* Desktop: Sidebar style (slides from right, not full width) */
+@media (min-width: 769px) {
+    .cartPanel {
+        width: 450px;
+        max-width: 90vw;
+        left: auto;
+    }
 }
 
 @keyframes slideIn {
@@ -87,6 +102,18 @@
     flex-direction: column;
     gap: 1rem;
     min-height: 0; /* Allows flex child to shrink and enable scrolling */
+}
+
+/* Mobile: Ensure items list doesn't push footer out of view */
+@media (max-width: 768px) {
+    .itemsList {
+        /* Calculate max height to ensure footer is always visible */
+        /* Header ~80px + Footer ~220px = ~300px, so items list gets remaining space */
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding-bottom: 1rem;
+    }
 }
 
 .emptyState {
@@ -220,6 +247,21 @@
     position: sticky;
     bottom: 0;
     width: 100%;
+}
+
+/* Mobile: Ensure footer is always visible at bottom */
+@media (max-width: 768px) {
+    .footer {
+        /* Footer stays at bottom due to flexbox, but ensure it's always visible */
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Ensure cart panel uses full viewport height and flexbox keeps footer visible */
+    .cartPanel {
+        height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
+    }
 }
 
 .totalSection {

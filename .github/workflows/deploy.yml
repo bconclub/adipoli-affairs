@@ -29,6 +29,16 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Verify .htaccess file
+        run: |
+          if [ -f "out/.htaccess" ]; then
+            echo "✓ .htaccess file found in out folder"
+            head -5 out/.htaccess
+          else
+            echo "✗ .htaccess file NOT found - this may cause 403 errors"
+            exit 1
+          fi
+
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
