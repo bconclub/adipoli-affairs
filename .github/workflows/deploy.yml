@@ -29,6 +29,17 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: List build output
+        run: |
+          echo "=== Build output structure ==="
+          ls -la .next/ || echo ".next folder not found"
+          echo ""
+          echo "=== Public folder ==="
+          ls -la public/ || echo "public folder not found"
+          echo ""
+          echo "=== Root files ==="
+          ls -la | head -20
+
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -38,6 +49,8 @@ jobs:
           local-dir: ./
           server-dir: /public_html/
           dangerous-clean-slate: false
+          log-level: verbose
+          dry-run: false
           exclude: |
             **/.git*
             **/.git*/**
@@ -54,4 +67,8 @@ jobs:
             **/.cursor/**
             **/.next/static/chunks/*.js.map
             **/.next/static/chunks/*.js.LICENSE.txt
+            **/tsconfig.json
+            **/eslint.config.mjs
+            **/next-env.d.ts
+            **/.gitignore
 
