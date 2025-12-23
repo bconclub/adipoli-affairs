@@ -137,6 +137,18 @@ export default function AdminPanel() {
         loadData();
     }, []);
 
+    // Scroll to form when editing
+    useEffect(() => {
+        if (editingItem || isAddingNew) {
+            setTimeout(() => {
+                const formElement = document.getElementById('menu-item-form');
+                if (formElement) {
+                    formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+    }, [editingItem, isAddingNew]);
+
     const loadData = () => {
         // Initialize menu items from data/menu.ts if not already initialized
         const transformedItems = transformMenuData();
@@ -146,17 +158,22 @@ export default function AdminPanel() {
     };
 
     const handleSaveMenuItem = (itemData: Partial<MenuItem>) => {
-        if (editingItem) {
-            updateMenuItem(editingItem.id, itemData);
-        } else {
-            addMenuItem(itemData as Omit<MenuItem, 'id'>);
+        try {
+            if (editingItem) {
+                updateMenuItem(editingItem.id, itemData);
+            } else {
+                addMenuItem(itemData as Omit<MenuItem, 'id'>);
+            }
+            // Force a small delay to ensure localStorage is updated
+            setTimeout(() => {
+                loadData();
+            }, 100);
+            setEditingItem(null);
+            setIsAddingNew(false);
+        } catch (error) {
+            console.error('Error saving menu item:', error);
+            alert('Failed to save menu item. Please check the console for details.');
         }
-        // Force a small delay to ensure localStorage is updated
-        setTimeout(() => {
-            loadData();
-        }, 100);
-        setEditingItem(null);
-        setIsAddingNew(false);
     };
 
     const handleDeleteMenuItem = (id: number) => {
@@ -301,15 +318,17 @@ export default function AdminPanel() {
 
                     {/* Add/Edit Form */}
                     {(isAddingNew || editingItem) && (
-                        <MenuItemForm
-                            item={editingItem || undefined}
-                            categories={CATEGORIES}
-                            onSave={handleSaveMenuItem}
-                            onCancel={() => {
-                                setEditingItem(null);
-                                setIsAddingNew(false);
-                            }}
-                        />
+                        <div id="menu-item-form" style={{ position: 'relative', zIndex: 10 }}>
+                            <MenuItemForm
+                                item={editingItem || undefined}
+                                categories={CATEGORIES}
+                                onSave={handleSaveMenuItem}
+                                onCancel={() => {
+                                    setEditingItem(null);
+                                    setIsAddingNew(false);
+                                }}
+                            />
+                        </div>
                     )}
 
                     {/* Menu Items List */}
@@ -652,7 +671,7 @@ function MenuItemForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="glass" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px' }}>
+        <form onSubmit={handleSubmit} className="glass" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px', position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2>{item ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
                 <button type="button" onClick={onCancel} className="btn btn-outline">
@@ -968,7 +987,17 @@ function MenuItemForm({
                     value={formData.desc}
                     onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
                     rows={4}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', resize: 'vertical' }}
+                    style={{ 
+                        width: '100%', 
+                        padding: '0.75rem', 
+                        borderRadius: '8px', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', 
+                        resize: 'vertical',
+                        pointerEvents: 'auto',
+                        cursor: 'text'
+                    }}
                 />
             </div>
 
