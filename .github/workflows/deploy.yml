@@ -70,22 +70,10 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: ./public_html/
+          server-dir: /public_html/
           dangerous-clean-slate: false
           log-level: verbose
           dry-run: false
-          
-      - name: Verify deployment location
-        run: |
-          echo "=== Deployment Summary ==="
-          echo "Files should be in: ./public_html/ (relative to FTP root)"
-          echo "Check the logs above for 'Uploading' messages to see actual paths"
-          echo ""
-          echo "If files aren't in public_html, try these server-dir options:"
-          echo "1. ./public_html/ (current - relative path)"
-          echo "2. /public_html/ (absolute from FTP root)"
-          echo "3. /home/u240474838/domains/adipoliaffairs.com/public_html/ (full absolute path)"
-          echo "4. public_html/ (no leading slash)"
           exclude: |
             **/.git*
             **/.git*/**
@@ -109,4 +97,16 @@ jobs:
             **/.next/trace
             **/.next/routes-manifest.json
             **/.next/prerender-manifest.json
+          
+      - name: Verify deployment location
+        run: |
+          echo "=== Deployment Summary ==="
+          echo "Files should be in: ./public_html/ (relative to FTP root)"
+          echo "Check the logs above for 'Uploading' messages to see actual paths"
+          echo ""
+          echo "If files aren't in public_html, try these server-dir options:"
+          echo "1. ./public_html/ (current - relative path)"
+          echo "2. /public_html/ (absolute from FTP root)"
+          echo "3. /home/u240474838/domains/adipoliaffairs.com/public_html/ (full absolute path)"
+          echo "4. public_html/ (no leading slash)"
 
