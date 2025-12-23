@@ -1109,7 +1109,7 @@ function FeaturedItemForm({
             setFormData({
                 name: menuItem.name,
                 price: priceStr,
-                image: menuItem.image,
+                image: formData.image || '/images/hero.png', // Keep current featured image, don't copy menu image
                 description: menuItem.desc,
                 calories: formData.calories,
                 prepTime: formData.prepTime,
@@ -1134,6 +1134,9 @@ function FeaturedItemForm({
 
             <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Quick Fill from Menu Item</label>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
+                    Select a menu item to auto-fill details. Note: You must upload a separate high-quality image for TV display.
+                </p>
                 <select
                     value={formData.menuItemId || ''}
                     onChange={(e) => {
@@ -1315,7 +1318,8 @@ function FeaturedItemForm({
                                 </label>
                             </div>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
-                                Enter image path/URL or choose a file from your computer
+                                <strong style={{ color: 'var(--primary)' }}>High-Quality Image Required for TV Display</strong><br/>
+                                Upload a high-resolution image (up to 2MB). This image will be displayed on TV screens, so quality is important.
                             </p>
                             
                             {/* Quick Image Select */}

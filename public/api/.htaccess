@@ -1,0 +1,13 @@
+# PHP Configuration for Image Uploads
+# Increase upload limits for high-quality images
+
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value memory_limit 128M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# Enable error logging (optional, for debugging)
+# php_flag log_errors on
+# php_value error_log /path/to/error.log
+
