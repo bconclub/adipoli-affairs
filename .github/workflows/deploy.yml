@@ -31,19 +31,14 @@ jobs:
 
       - name: List build output
         run: |
-          echo "=== Build output structure ==="
-          ls -la .next/ || echo ".next folder not found"
-          ls -la .next/standalone/ 2>/dev/null || echo "No standalone build"
-          ls -la .next/static/ 2>/dev/null || echo "No static build"
+          echo "=== Static export output ==="
+          ls -la out/ || echo "out folder not found"
           echo ""
-          echo "=== Public folder ==="
-          ls -la public/ || echo "public folder not found"
+          echo "=== Out folder structure ==="
+          find out/ -type f | head -30 || echo "No files in out/"
           echo ""
-          echo "=== Root files ==="
-          ls -la | head -20
-          echo ""
-          echo "=== Checking what will be deployed ==="
-          find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./.next/cache/*" | head -30
+          echo "=== Public folder (copied to out/) ==="
+          ls -la out/images/ 2>/dev/null || echo "No images folder in out/"
 
       - name: Create deployment package info
         run: |
@@ -69,8 +64,8 @@ jobs:
           server: 82.180.152.35
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          server-dir: /public_html/
+          local-dir: ./out/
+          server-dir: ./domains/adipoliaffairs.com/public_html/
           dangerous-clean-slate: false
           log-level: verbose
           dry-run: false
@@ -78,35 +73,15 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
-            **/.next/cache/**
             **/.env*
             **/.env*.local
             **/.vscode/**
             **/.idea/**
-            **/*.md
-            **/.github/**
-            **/README.md
-            **/adipoli.md
             **/.cursor/**
-            **/.next/static/chunks/*.js.map
-            **/.next/static/chunks/*.js.LICENSE.txt
-            **/tsconfig.json
-            **/eslint.config.mjs
-            **/next-env.d.ts
-            **/.gitignore
-            **/.next/trace
-            **/.next/routes-manifest.json
-            **/.next/prerender-manifest.json
           
       - name: Verify deployment location
         run: |
           echo "=== Deployment Summary ==="
-          echo "Files should be in: ./public_html/ (relative to FTP root)"
+          echo "Files deployed to: ./domains/adipoliaffairs.com/public_html/ (relative to FTP root)"
           echo "Check the logs above for 'Uploading' messages to see actual paths"
-          echo ""
-          echo "If files aren't in public_html, try these server-dir options:"
-          echo "1. ./public_html/ (current - relative path)"
-          echo "2. /public_html/ (absolute from FTP root)"
-          echo "3. /home/u240474838/domains/adipoliaffairs.com/public_html/ (full absolute path)"
-          echo "4. public_html/ (no leading slash)"
 

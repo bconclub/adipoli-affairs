@@ -616,38 +616,36 @@ function MenuItemForm({
             // Compress the cropped image
             const result = await compressImage(croppedFile, {}, productName);
             
-            // Upload to server
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', result.file);
-            uploadFormData.append('category', formData.category);
-            uploadFormData.append('productName', productName);
-            
-            const uploadResponse = await fetch('/api/upload-image', {
-                method: 'POST',
-                body: uploadFormData,
-            });
-            
-            if (!uploadResponse.ok) {
-                throw new Error('Upload failed');
-            }
-            
-            const uploadData = await uploadResponse.json();
-            
-            // Add cache-busting timestamp to force image refresh
-            const imagePathWithTimestamp = `${uploadData.path}?t=${Date.now()}`;
-            
-            // Update form with the new image path
-            setFormData({ ...formData, image: uploadData.path });
-            
-            // Show file sizes
-            setFileSizes({
-                original: getFileSize(result.originalSize),
-                compressed: getFileSize(result.compressedSize),
-            });
+            // For static export, save as base64 data URL instead of uploading to server
+            // Convert compressed file to base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                
+                // Update form with the base64 image data
+                setFormData({ ...formData, image: base64String });
+                
+                // Show file sizes
+                setFileSizes({
+                    original: getFileSize(result.originalSize),
+                    compressed: getFileSize(result.compressedSize),
+                });
+                
+                setIsCompressing(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            };
+            reader.onerror = () => {
+                console.error('Failed to read file');
+                alert('Failed to process image. Please try again.');
+                setIsCompressing(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            };
+            reader.readAsDataURL(result.file);
         } catch (error) {
-            console.error('Upload error:', error);
-            alert('Failed to upload image. Please try again.');
-        } finally {
+            console.error('Image processing error:', error);
+            alert('Failed to process image. Please try again.');
             setIsCompressing(false);
             setImageToCrop(null);
             setOriginalFile(null);
@@ -736,7 +734,7 @@ function MenuItemForm({
                             {formData.image ? (
                                 <>
                                     <img 
-                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
+                                        src={formData.image.startsWith('data:image/') ? formData.image : (formData.image.startsWith('/') ? formData.image : `/${formData.image}`)}
                                         alt="Preview" 
                                         style={{ 
                                             width: '100%',
@@ -823,7 +821,11 @@ function MenuItemForm({
                                             borderRadius: '6px',
                                             wordBreak: 'break-all'
                                         }}>
-                                            <strong style={{ color: 'var(--text-primary)' }}>Image Path:</strong> {formData.image}
+                                            <strong style={{ color: 'var(--text-primary)' }}>Image:</strong> {
+                                                formData.image.startsWith('data:image/') 
+                                                    ? 'Base64 Image (stored in localStorage)' 
+                                                    : formData.image
+                                            }
                                         </div>
                                     )}
                                 </div>
@@ -1097,35 +1099,36 @@ function FeaturedItemForm({
             // Compress the cropped image
             const result = await compressImage(croppedFile, {}, productName);
             
-            // Upload to server - use "featured" as category
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', result.file);
-            uploadFormData.append('category', 'featured');
-            uploadFormData.append('productName', productName);
-            
-            const uploadResponse = await fetch('/api/upload-image', {
-                method: 'POST',
-                body: uploadFormData,
-            });
-            
-            if (!uploadResponse.ok) {
-                throw new Error('Upload failed');
-            }
-            
-            const uploadData = await uploadResponse.json();
-            
-            // Update form with the new image path
-            setFormData({ ...formData, image: uploadData.path });
-            
-            // Show file sizes
-            setFileSizes({
-                original: getFileSize(result.originalSize),
-                compressed: getFileSize(result.compressedSize),
-            });
+            // For static export, save as base64 data URL instead of uploading to server
+            // Convert compressed file to base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                
+                // Update form with the base64 image data
+                setFormData({ ...formData, image: base64String });
+                
+                // Show file sizes
+                setFileSizes({
+                    original: getFileSize(result.originalSize),
+                    compressed: getFileSize(result.compressedSize),
+                });
+                
+                setIsCompressing(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            };
+            reader.onerror = () => {
+                console.error('Failed to read file');
+                alert('Failed to process image. Please try again.');
+                setIsCompressing(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            };
+            reader.readAsDataURL(result.file);
         } catch (error) {
-            console.error('Upload error:', error);
-            alert('Failed to upload image. Please try again.');
-        } finally {
+            console.error('Image processing error:', error);
+            alert('Failed to process image. Please try again.');
             setIsCompressing(false);
             setImageToCrop(null);
             setOriginalFile(null);
@@ -1239,7 +1242,7 @@ function FeaturedItemForm({
                             {formData.image ? (
                                 <>
                                     <img 
-                                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
+                                        src={formData.image.startsWith('data:image/') ? formData.image : (formData.image.startsWith('/') ? formData.image : `/${formData.image}`)}
                                         alt="Preview" 
                                         style={{ 
                                             width: '100%',

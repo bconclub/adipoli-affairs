@@ -16,8 +16,13 @@ const sanitizeName = (name: string | undefined | null): string => {
         .replace(/^-+|-+$/g, '');
 };
 
-// Get image path from public folder based on product name
+// Get image path from public folder based on product name, or use base64 data URL if present
 const getImagePathFromPublic = (name: string, currentImage: string): string => {
+    // If image is a base64 data URL, use it directly
+    if (currentImage && currentImage.startsWith('data:image/')) {
+        return currentImage;
+    }
+    
     // If the image path already looks like it's from public folder with category structure, use it
     if (currentImage && currentImage.startsWith('/images/')) {
         const pathParts = currentImage.split('/');
@@ -133,7 +138,8 @@ export default function Cart() {
                                                     }}
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        if (!target.src.endsWith('/images/hero.png')) {
+                                                        // Don't try to fallback if it's a base64 data URL (shouldn't fail)
+                                                        if (!target.src.startsWith('data:image/') && !target.src.endsWith('/images/hero.png')) {
                                                             target.src = '/images/hero.png';
                                                         }
                                                     }}

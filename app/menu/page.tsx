@@ -387,8 +387,10 @@ export default function MenuPage() {
             {filteredItems.length > 0 ? (
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
                 {filteredItems.map(item => {
-                    // Override image path with public folder path based on name and category
-                    const imagePath = getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png';
+                    // Check if image is a base64 data URL, otherwise use public folder path
+                    const imagePath = item?.image?.startsWith('data:image/') 
+                        ? item.image 
+                        : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
                     
                     return (
                     <div key={item.id} className="glass-card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -409,9 +411,9 @@ export default function MenuPage() {
                                     objectPosition: 'center center'
                                 }}
                                 onError={(e) => {
-                                    // If image from public folder doesn't exist, use fallback
+                                    // If image from public folder doesn't exist and it's not a base64, use fallback
                                     const target = e.target as HTMLImageElement;
-                                    if (target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
+                                    if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
                                         target.src = getFallbackImage(item.name);
                                     }
                                 }}
