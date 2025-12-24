@@ -312,49 +312,6 @@ export default function MenuPage() {
 
             {/* Controls */}
             <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem' }}>
-                {/* Filter Button - Mobile First Position */}
-                <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '1rem',
-                    gap: '1rem',
-                    flexWrap: 'wrap'
-                }}>
-                    <button
-                        onClick={() => setShowFilterModal(true)}
-                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
-                        style={{ 
-                            borderRadius: '50px', 
-                            whiteSpace: 'nowrap', 
-                            fontSize: '0.9rem', 
-                            padding: '0.5rem 1.25rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            flexShrink: 0
-                        }}
-                    >
-                        <Filter size={16} />
-                        Filter
-                        {selectedCategories.length > 0 && (
-                            <span style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '50%',
-                                width: '20px',
-                                height: '20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold'
-                            }}>
-                                {selectedCategories.length}
-                            </span>
-                        )}
-                    </button>
-                </div>
-
                 {/* Category Buttons - Horizontal Scrolling */}
                 <div 
                     style={{ 
@@ -395,24 +352,66 @@ export default function MenuPage() {
                     ))}
                 </div>
 
-                {/* Search Bar */}
-                <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                    <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
-                    <input
-                        type="text"
-                        placeholder="Search dishes..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%', 
-                            padding: '0.75rem 1rem 0.75rem 3rem', 
-                            borderRadius: '50px',
-                            background: 'rgba(255,255,255,0.05)', 
-                            border: '1px solid rgba(255,255,255,0.1)', 
-                            color: 'white',
-                            fontSize: '0.95rem'
+                {/* Filter and Search - Side by Side */}
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    alignItems: 'center',
+                    flexWrap: 'nowrap'
+                }}>
+                    {/* Filter Button */}
+                    <button
+                        onClick={() => setShowFilterModal(true)}
+                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
+                        style={{ 
+                            borderRadius: '50px', 
+                            whiteSpace: 'nowrap', 
+                            fontSize: '0.9rem', 
+                            padding: '0.5rem 1.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            flexShrink: 0
                         }}
-                    />
+                    >
+                        <Filter size={16} />
+                        Filter
+                        {selectedCategories.length > 0 && (
+                            <span style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                            }}>
+                                {selectedCategories.length}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Search Bar */}
+                    <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search dishes..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%', 
+                                padding: '0.75rem 1rem 0.75rem 3rem', 
+                                borderRadius: '50px',
+                                background: 'rgba(255,255,255,0.05)', 
+                                border: '1px solid rgba(255,255,255,0.1)', 
+                                color: 'white',
+                                fontSize: '0.95rem'
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
