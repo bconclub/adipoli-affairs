@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
+import styles from "./page.module.css";
 
 export default function Home() {
   const { addItem } = useCart();
@@ -100,67 +101,32 @@ export default function Home() {
   };
 
   return (
-    <div className="home-wrapper" style={{ marginTop: '-80px' }}>
+    <div className={styles.homeWrapper} style={{ marginTop: '-80px' }}>
       {/* Hero Section - Full Screen */}
-      <section style={{ 
-        position: 'relative', 
-        height: '100vh', 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        width: '100%',
-        paddingTop: '80px', // Navbar height to prevent content from hiding
-        overflow: 'hidden'
-      }}>
+      <section className={styles.heroSection}>
         {/* YouTube Video Background */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: -1,
-          overflow: 'hidden'
-        }}>
+        <div className={styles.videoContainer}>
           <div
             ref={videoRef}
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: '100vw',
-              height: '56.25vw', // 16:9 aspect ratio
-              minHeight: '100vh',
-              minWidth: '177.77vh', // 16:9 aspect ratio
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none'
-            }}
+            className={styles.videoWrapper}
           />
           {/* Dark overlay for text readability */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1
-          }} />
+          <div className={styles.overlay} />
         </div>
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ maxWidth: '800px' }}>
-            <span className="text-primary" style={{ fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem', display: 'block' }}>
+        <div className={`container ${styles.heroContent}`}>
+          <div className={styles.heroInner}>
+            <span className={`text-primary ${styles.heroWelcome}`}>
               Welcome to Adipoli Affairs
             </span>
-            <h1 style={{ fontSize: '4rem', marginBottom: '1.5rem', lineHeight: 1.1 }}>
+            <h1 className={styles.heroTitle}>
               Authentic <span className="text-primary">Kerala Cuisine</span><br />
               in Christchurch
             </h1>
-            <p style={{ fontSize: '1.25rem', color: '#cbd5e1', marginBottom: '2.5rem', maxWidth: '600px' }}>
+            <p className={styles.heroDescription}>
               Experience the vibrant spices, coconut-rich curries, and traditional recipes
               from God's Own Country in a premium dining atmosphere.
             </p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className={styles.heroButtons}>
               <Link href="/menu" className="btn btn-primary">
                 Order Now <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
               </Link>
@@ -173,35 +139,35 @@ export default function Home() {
       </section>
 
       {/* Quick Info */}
-      <section className="glass" style={{ transform: 'translateY(-50%)', maxWidth: '1000px', margin: '0 auto', padding: '2rem', borderRadius: '16px', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-        <div className="flex-center" style={{ gap: '1rem' }}>
-          <Clock size={32} className="text-primary" />
-          <div>
-            <h4 style={{ marginBottom: '0.2rem' }}>Opening Hours</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>Mon-Sun: 11am - 10pm</p>
+      <section className={`glass ${styles.quickInfo}`}>
+        <div className={styles.quickInfoItem}>
+          <Clock size={32} className={`text-primary ${styles.quickInfoIcon}`} />
+          <div className={styles.quickInfoContent}>
+            <h4>Opening Hours</h4>
+            <p>Mon-Sun: 11am - 10pm</p>
           </div>
         </div>
-        <div style={{ width: '1px', height: '50px', background: 'rgba(255,255,255,0.1)' }} />
-        <div className="flex-center" style={{ gap: '1rem' }}>
-          <MapPin size={32} className="text-primary" />
-          <div>
-            <h4 style={{ marginBottom: '0.2rem' }}>Location</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>123 Riccarton Rd, CHCH</p>
+        <div className={styles.quickInfoDivider} />
+        <div className={styles.quickInfoItem}>
+          <MapPin size={32} className={`text-primary ${styles.quickInfoIcon}`} />
+          <div className={styles.quickInfoContent}>
+            <h4>Location</h4>
+            <p>123 Riccarton Rd, CHCH</p>
           </div>
         </div>
-        <div style={{ width: '1px', height: '50px', background: 'rgba(255,255,255,0.1)' }} />
-        <div className="flex-center" style={{ gap: '1rem' }}>
-          <Star size={32} className="text-primary" />
-          <div>
-            <h4 style={{ marginBottom: '0.2rem' }}>4.9/5 Rating</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>Based on 500+ reviews</p>
+        <div className={styles.quickInfoDivider} />
+        <div className={styles.quickInfoItem}>
+          <Star size={32} className={`text-primary ${styles.quickInfoIcon}`} />
+          <div className={styles.quickInfoContent}>
+            <h4>4.9/5 Rating</h4>
+            <p>Based on 500+ reviews</p>
           </div>
         </div>
       </section>
 
       {/* Featured Dishes Preview */}
-      <section className="section container">
-        <div className="flex-between mb-8">
+      <section className={`section container ${styles.featuredSection}`}>
+        <div className={styles.featuredHeader}>
           <div>
             <h2 className="text-primary">Signature Dishes</h2>
             <p>Our chef's most recommended authentic delicacies.</p>
@@ -209,25 +175,24 @@ export default function Home() {
           <Link href="/menu" className="btn btn-outline">View Full Menu</Link>
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        <div className={styles.featuredGrid}>
           {[
             { name: "Kerala Beef Fry", img: "/images/beef.png", price: "$22.00", desc: "Spicy roasted beef with coconut slices." },
             { name: "Chatti Biryani", img: "/images/biryani.png", price: "$28.50", desc: "Layered rice and meat cooked in clay pot." },
             { name: "Nidhi Chicken", img: "/images/chicken.png", price: "$24.99", desc: "Creamy roasted chicken curry." }
           ].map((item, idx) => (
-            <div key={idx} className="glass-card" style={{ overflow: 'hidden' }}>
-              <div style={{ position: 'relative', height: '250px' }}>
+            <div key={idx} className={`glass-card ${styles.featuredCard}`}>
+              <div className={styles.featuredImage}>
                 <Image src={item.img} alt={item.name} fill style={{ objectFit: 'cover' }} />
               </div>
-              <div style={{ padding: '1.5rem' }}>
-                <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
+              <div className={styles.featuredCardContent}>
+                <div className={styles.featuredCardHeader}>
                   <h3>{item.name}</h3>
-                  <span className="text-primary" style={{ fontWeight: '700' }}>{item.price}</span>
+                  <span className={`text-primary ${styles.featuredCardPrice}`}>{item.price}</span>
                 </div>
                 <p>{item.desc}</p>
                 <button 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', marginTop: '1rem' }}
+                  className={`btn btn-primary ${styles.featuredCardButton}`}
                   onClick={() => handleAddToOrder(item)}
                 >
                   Add to Order
@@ -239,23 +204,23 @@ export default function Home() {
       </section>
 
       {/* About Snippet */}
-      <section className="section" style={{ background: 'var(--surface)' }}>
-        <div className="container grid" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
-          <div style={{ position: 'relative', height: '500px', borderRadius: '24px', overflow: 'hidden' }}>
+      <section className={`section ${styles.aboutSection}`}>
+        <div className={`container ${styles.aboutGrid}`}>
+          <div className={styles.aboutImage}>
             <Image src="/images/hero.png" alt="Chef" fill style={{ objectFit: 'cover' }} />
           </div>
-          <div style={{ padding: '2rem' }}>
+          <div className={styles.aboutContent}>
             <h2 className="text-primary">Our Heritage</h2>
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '2.5rem' }}>Bringing Kerala to Your Plate</h3>
+            <h3 className={styles.aboutTitle}>Bringing Kerala to Your Plate</h3>
             <p style={{ marginBottom: '1.5rem' }}>
               Adipoli Affairs started with a simple mission: to serve the most authentic Kerala cuisine
               using traditional recipes passed down through generations. Our chefs use only the
               freshest local ingredients combined with spices imported directly from the spice gardens of Kerala.
             </p>
-            <ul style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+            <ul className={styles.aboutList}>
               {['Halal Certified', 'Authentic Spices', 'Fresh Ingredients', 'Traditional Recipes'].map(tag => (
-                <li key={tag} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                <li key={tag} className={styles.aboutListItem}>
+                  <div className={styles.aboutListDot} />
                   {tag}
                 </li>
               ))}

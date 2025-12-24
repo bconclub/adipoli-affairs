@@ -179,35 +179,33 @@ export default function MenuPage() {
     // Load menu items from server API
     useEffect(() => {
         const loadItems = async () => {
+            // Always have fallback data ready
+            const transformedItems = transformMenuData();
+            
             try {
-                // First ensure server is initialized with default data if empty
-                const transformedItems = transformMenuData();
-                console.log('Transformed items count:', transformedItems.length);
+                // Try to load from server API (for admin panel updates)
+                const items = await loadMenuItems();
                 
-                // Try to initialize and load from server
-                try {
-                    const items = await initializeMenuItems(transformedItems);
-                    console.log('Loaded items count from server:', items.length);
-                    if (items.length > 0) {
-                        setMenuItems(items);
-                        return;
+                // Use server data if available and not empty, otherwise use fallback
+                if (items && items.length > 0) {
+                    setMenuItems(items);
+                    console.log(`Loaded ${items.length} menu items from server`);
+                } else {
+                    // Initialize server with default data if empty
+                    try {
+                        await initializeMenuItems(transformedItems);
+                    } catch (initError) {
+                        console.warn('Could not initialize server menu data:', initError);
                     }
-                } catch (apiError) {
-                    console.warn('API not available, using default data:', apiError);
-                }
-                
-                // Fallback: use transformed items if API fails
-                console.log('Using transformed menu items as fallback');
-                setMenuItems(transformedItems);
-            } catch (error) {
-                console.error('Error loading menu items:', error);
-                // Final fallback: try to use transformed items
-                try {
-                    const transformedItems = transformMenuData();
+                    // Use transformed menu data as fallback
                     setMenuItems(transformedItems);
-                } catch (transformError) {
-                    console.error('Error transforming menu data:', transformError);
+                    console.log(`Using ${transformedItems.length} menu items from local data`);
                 }
+            } catch (error) {
+                console.warn('Error loading menu items from server, using local data:', error);
+                // Fallback to transformed menu data on error
+                setMenuItems(transformedItems);
+                console.log(`Using ${transformedItems.length} menu items from local data`);
             }
         };
         
@@ -314,6 +312,49 @@ export default function MenuPage() {
 
             {/* Controls */}
             <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem' }}>
+                {/* Filter Button - Mobile First Position */}
+                <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '1rem',
+                    gap: '1rem',
+                    flexWrap: 'wrap'
+                }}>
+                    <button
+                        onClick={() => setShowFilterModal(true)}
+                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
+                        style={{ 
+                            borderRadius: '50px', 
+                            whiteSpace: 'nowrap', 
+                            fontSize: '0.9rem', 
+                            padding: '0.5rem 1.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            flexShrink: 0
+                        }}
+                    >
+                        <Filter size={16} />
+                        Filter
+                        {selectedCategories.length > 0 && (
+                            <span style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                width: '20px',
+                                height: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                            }}>
+                                {selectedCategories.length}
+                            </span>
+                        )}
+                    </button>
+                </div>
+
                 {/* Category Buttons - Horizontal Scrolling */}
                 <div 
                     style={{ 
@@ -352,38 +393,6 @@ export default function MenuPage() {
                             {cat}
                         </button>
                     ))}
-                    <button
-                        onClick={() => setShowFilterModal(true)}
-                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
-                        style={{ 
-                            borderRadius: '50px', 
-                            whiteSpace: 'nowrap', 
-                            fontSize: '0.9rem', 
-                            padding: '0.5rem 1.25rem',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <Filter size={16} />
-                        Filter
-                        {selectedCategories.length > 0 && (
-                            <span style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '50%',
-                                width: '20px',
-                                height: '20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold'
-                            }}>
-                                {selectedCategories.length}
-                            </span>
-                        )}
-                    </button>
                 </div>
 
                 {/* Search Bar */}
@@ -491,29 +500,42 @@ export default function MenuPage() {
                             onClick={() => setShowFilterModal(false)}
                         />
 
-                        {/* Modal */}
-                        <motion.div
+                        {/* Modal Wrapper - Centers the modal */}
+                        <div
                             style={{
                                 position: 'fixed',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                background: 'var(--surface)',
-                                borderRadius: '16px',
-                                padding: '2rem',
-                                maxWidth: '90vw',
-                                width: '500px',
-                                maxHeight: '80vh',
-                                overflowY: 'auto',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 zIndex: 1001,
-                                border: '1px solid var(--glass-border)',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+                                pointerEvents: 'none'
                             }}
-                            initial={{ opacity: 0, scale: 0.9, y: -20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: -20 }}
                             onClick={(e) => e.stopPropagation()}
                         >
+                            {/* Modal */}
+                            <motion.div
+                                style={{
+                                    background: 'var(--surface)',
+                                    borderRadius: '16px',
+                                    padding: '2rem',
+                                    width: 'calc(100vw - 2rem)',
+                                    maxWidth: '500px',
+                                    maxHeight: '80vh',
+                                    overflowY: 'auto',
+                                    border: '1px solid var(--glass-border)',
+                                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                    boxSizing: 'border-box',
+                                    pointerEvents: 'auto'
+                                }}
+                                initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                             {/* Header */}
                             <div style={{ 
                                 display: 'flex', 
@@ -523,7 +545,7 @@ export default function MenuPage() {
                                 paddingBottom: '1rem',
                                 borderBottom: '1px solid var(--glass-border)'
                             }}>
-                                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Filter Categories</h2>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Filter Categories</h2>
                                 <button
                                     onClick={() => setShowFilterModal(false)}
                                     style={{
@@ -544,7 +566,7 @@ export default function MenuPage() {
                             {/* Categories List */}
                             <div style={{ 
                                 display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
                                 gap: '0.75rem',
                                 marginBottom: '1.5rem'
                             }}>
@@ -611,7 +633,8 @@ export default function MenuPage() {
                                     Apply
                                 </button>
                             </div>
-                        </motion.div>
+                            </motion.div>
+                        </div>
                     </>
                 )}
             </AnimatePresence>
