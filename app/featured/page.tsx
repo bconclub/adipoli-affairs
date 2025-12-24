@@ -31,38 +31,6 @@ export default function FeaturedPage() {
     const [progress, setProgress] = useState(0);
     const [fullScreen, setFullScreen] = useState(true);
 
-    // Auto-play Logic
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        let progressInterval: NodeJS.Timeout;
-
-        if (isPlaying) {
-            const step = 50; // Update every 50ms
-            interval = setInterval(() => {
-                handleNext();
-            }, duration);
-
-            progressInterval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 100) return 0;
-                    return prev + (step / duration) * 100;
-                });
-            }, step);
-        } else {
-            setProgress(0);
-        }
-
-        return () => {
-            clearInterval(interval);
-            clearInterval(progressInterval);
-        };
-    }, [isPlaying, duration, currentIndex]); // Reset on index change
-
-    // Reset progress when index changes manually
-    useEffect(() => {
-        setProgress(0);
-    }, [currentIndex]);
-
     const handleNext = useCallback(() => {
         if (items.length === 0) return;
         setCurrentIndex((prev) => (prev + 1) % items.length);
@@ -72,6 +40,40 @@ export default function FeaturedPage() {
         if (items.length === 0) return;
         setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     };
+
+    // Auto-play Logic - cycle through all products
+    useEffect(() => {
+        if (!isPlaying || items.length === 0) return;
+
+        const interval = setInterval(() => {
+            handleNext();
+        }, duration);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [isPlaying, duration, handleNext, items.length]);
+
+    // Progress bar update - resets when slide changes
+    useEffect(() => {
+        setProgress(0); // Reset progress when slide changes
+        
+        if (!isPlaying || items.length === 0) {
+            return;
+        }
+
+        const step = 50; // Update every 50ms
+        const progressInterval = setInterval(() => {
+            setProgress(prev => {
+                if (prev >= 100) return 0;
+                return prev + (step / duration) * 100;
+            });
+        }, step);
+
+        return () => {
+            clearInterval(progressInterval);
+        };
+    }, [isPlaying, duration, currentIndex, items.length]);
 
     const toggleFullScreen = () => {
         if (!document.fullscreenElement) {

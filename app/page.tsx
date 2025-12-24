@@ -29,54 +29,43 @@ export default function Home() {
           playerVars: {
             autoplay: 1,
             mute: 1,
-            loop: 1,
-            playlist: 'WW0SLuX8HsI',
             controls: 0,
             showinfo: 0,
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
-            start: 6,
-            end: 15
+            start: 9
           },
           events: {
             onReady: (event: any) => {
-              event.target.seekTo(6, true);
+              // Start at 9 seconds
+              event.target.seekTo(9, true);
               event.target.playVideo();
-            },
-            onStateChange: (event: any) => {
-              // Check current time and loop between 6-15 seconds
-              const checkTime = () => {
+              
+              // Set up interval to check time and loop between 9-15 seconds
+              const checkLoop = () => {
                 if (player && player.getCurrentTime) {
-                  const currentTime = player.getCurrentTime();
-                  if (currentTime >= 15) {
-                    player.seekTo(6, true);
-                    player.playVideo();
+                  try {
+                    const currentTime = player.getCurrentTime();
+                    // If past 15 seconds or before 9 seconds, seek back to 9
+                    if (currentTime >= 15 || currentTime < 9) {
+                      player.seekTo(9, true);
+                    }
+                  } catch (e) {
+                    // Ignore errors during seeking
                   }
                 }
               };
               
-              // Check time every 100ms when playing
-              if (event.data === 1) { // 1 = playing
-                const interval = setInterval(() => {
-                  if (player && player.getCurrentTime) {
-                    const currentTime = player.getCurrentTime();
-                    if (currentTime >= 15) {
-                      player.seekTo(6, true);
-                      player.playVideo();
-                    }
-                  }
-                }, 100);
-                
-                // Store interval to clear later
-                // @ts-ignore
-                player._loopInterval = interval;
-              } else if (event.data === 2) { // 2 = paused
-                // @ts-ignore
-                if (player._loopInterval) {
-                  // @ts-ignore
-                  clearInterval(player._loopInterval);
-                }
+              // Check every 200ms to ensure we stay in the 9-15 second range
+              // @ts-ignore
+              player._loopInterval = setInterval(checkLoop, 200);
+            },
+            onStateChange: (event: any) => {
+              // When video ends, loop back to 9 seconds
+              if (event.data === 0) { // 0 = ended
+                event.target.seekTo(9, true);
+                event.target.playVideo();
               }
             }
           }
@@ -86,6 +75,11 @@ export default function Home() {
 
     return () => {
       if (player) {
+        // @ts-ignore
+        if (player._loopInterval) {
+          // @ts-ignore
+          clearInterval(player._loopInterval);
+        }
         player.destroy();
       }
     };
