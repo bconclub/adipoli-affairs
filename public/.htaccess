@@ -23,6 +23,11 @@ RewriteCond %{REQUEST_URI} ^/menu/?$
 RewriteCond %{DOCUMENT_ROOT}/menu.html -f
 RewriteRule ^menu/?$ /menu.html [L]
 
+# Explicitly handle /featured route
+RewriteCond %{REQUEST_URI} ^/featured/?$
+RewriteCond %{DOCUMENT_ROOT}/featured.html -f
+RewriteRule ^featured/?$ /featured.html [L]
+
 # Handle Next.js static export routes - serve .html files without extension
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
