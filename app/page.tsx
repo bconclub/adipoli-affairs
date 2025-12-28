@@ -18,7 +18,7 @@ interface FeaturedItem {
 
 export default function Home() {
   const { addItem } = useCart();
-  const videoRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([]);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -37,81 +37,27 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Load YouTube IFrame API
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    // Setup video to play and loop
+    const video = videoRef.current;
+    if (!video) return;
 
-    let player: any;
-
-    // @ts-ignore
-    window.onYouTubeIframeAPIReady = () => {
-      if (videoRef.current) {
-        // @ts-ignore
-        player = new window.YT.Player(videoRef.current, {
-          videoId: 'WW0SLuX8HsI',
-          playerVars: {
-            autoplay: 1,
-            mute: 1,
-            loop: 1,
-            controls: 0,
-            showinfo: 0,
-            rel: 0,
-            modestbranding: 1,
-            playsinline: 1,
-            start: 7,
-            end: 15
-          },
-          events: {
-            onReady: (event: any) => {
-              event.target.seekTo(7, true);
-              event.target.playVideo();
-            },
-            onStateChange: (event: any) => {
-              // Check current time and loop between 7-15 seconds
-              const checkTime = () => {
-                if (player && player.getCurrentTime) {
-                  const currentTime = player.getCurrentTime();
-                  if (currentTime >= 15) {
-                    player.seekTo(7, true);
-                    player.playVideo();
-                  }
-                }
-              };
-              
-              // Check time every 100ms when playing
-              if (event.data === 1) { // 1 = playing
-                const interval = setInterval(() => {
-                  if (player && player.getCurrentTime) {
-                    const currentTime = player.getCurrentTime();
-                    if (currentTime >= 15) {
-                      player.seekTo(7, true);
-                      player.playVideo();
-                    }
-                  }
-                }, 100);
-                
-                // Store interval to clear later
-                // @ts-ignore
-                player._loopInterval = interval;
-              } else if (event.data === 2) { // 2 = paused
-                // @ts-ignore
-                if (player._loopInterval) {
-                  // @ts-ignore
-                  clearInterval(player._loopInterval);
-                }
-              }
-            }
-          }
-        });
-      }
+    const handleLoadedMetadata = () => {
+      video.play().catch((error) => {
+        console.log('Autoplay prevented:', error);
+      });
     };
 
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    // Try to play if video is already loaded
+    if (video.readyState >= 2) {
+      video.play().catch((error) => {
+        console.log('Autoplay prevented:', error);
+      });
+    }
+
     return () => {
-      if (player) {
-        player.destroy();
-      }
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
   }, []);
 
@@ -291,7 +237,7 @@ export default function Home() {
         paddingBottom: isMobile ? '2rem' : '0',
         overflow: 'hidden'
       }}>
-        {/* YouTube Video Background */}
+        {/* Video Background */}
         <div style={{
           position: 'absolute',
           top: 0,
@@ -302,7 +248,6 @@ export default function Home() {
           overflow: 'hidden'
         }}>
           <div
-            ref={videoRef}
             style={{
               position: 'absolute',
               top: '50%',
@@ -314,7 +259,21 @@ export default function Home() {
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'none'
             }}
-          />
+          >
+            <video
+              ref={videoRef}
+              src="/Adpilo Kitchen.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+          </div>
           {/* Dark overlay for text readability */}
           <div style={{
             position: 'absolute',
