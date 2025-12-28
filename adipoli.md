@@ -85,6 +85,8 @@ Adipoli Affairs/
 │   ├── .htaccess                # Apache configuration for static export
 │   ├── Adipoli icon.png         # Site favicon
 │   ├── Adipoli Logo V1.png      # Main logo
+│   ├── Adpilo Kitchen.mp4       # Hero section video (loops continuously)
+│   ├── Heritage.webp            # Our Heritage section image
 │   └── images/                  # Image assets (organized by category)
 │       ├── beef.png
 │       ├── biryani.png
@@ -171,13 +173,13 @@ npm run lint     # Run ESLint
 
 ### Routing Structure (App Router)
 
-- `/` - Home page with hero section, featured dishes, and about snippet
-- `/about` - About page
-- `/menu` - Full menu page
+- `/` - Home page with local video hero, featured dishes, "Our Heritage" section with parallax, and about snippet
+- `/about` - About page with proper padding and left-aligned content
+- `/menu` - Full menu page with image carousels and restaurant-style layout
 - `/featured` - Featured dishes page
-- `/catering` - Catering services page
-- `/contact` - Contact page
-- `/admin` - Admin page
+- `/catering` - Catering services page (removed "Sample Menus & Packages" section)
+- `/contact` - Contact page with proper padding and left-aligned content
+- `/admin` - Admin page with simplified featured items management, search, and preview cards
 
 ### State Management
 
@@ -216,6 +218,9 @@ npm run lint     # Run ESLint
    - **Mobile**: Full-screen overlay
    - Item list with quantity controls
    - Checkout button always visible (no scrolling needed on mobile)
+   - **WhatsApp checkout flow**: Modal form to collect customer name and phone number
+   - Order details formatted and sent via WhatsApp API
+   - Modal rendered via React Portal for proper viewport centering
    - Supports base64 images and public folder images
 
 5. **FloatingCartButton** (`components/FloatingCartButton.tsx`):
@@ -232,6 +237,17 @@ npm run lint     # Run ESLint
    - 16:9 aspect ratio cropping
    - Zoom and drag functionality
    - Used in admin panel for product images
+
+8. **Admin Panel** (`app/admin/page.tsx`):
+   - Menu items management with image editing
+   - **Featured Items Management**:
+     - Simplified list view with product name, edit button, and featured toggle
+     - Search bar for easy product finding
+     - Preview cards section showing featured items (50% smaller than menu cards)
+     - Drag-and-drop reordering for featured items (visual feedback)
+     - Close button on preview cards to remove from featured
+   - Image cropping and compression for product images
+   - Featured image section always visible in edit modal
 
 ---
 
@@ -250,12 +266,17 @@ npm run lint     # Run ESLint
 6. ✅ **Toast notifications** for cart actions
 7. ✅ **Floating cart button** on mobile
 8. ✅ **Category filtering** with multi-select modal
-9. ✅ **YouTube video hero** with custom loop (8-15 seconds)
-10. ✅ SEO optimization with metadata
-11. ✅ Modern UI with glassmorphism effects
-12. ✅ Font optimization with Next.js font loader
-13. ✅ TypeScript for type safety
-14. ✅ Client-side only (no server dependencies)
+9. ✅ **Local video hero** with full video loop (`Adpilo Kitchen.mp4`)
+10. ✅ **WhatsApp checkout flow** - Collects customer details and sends order via WhatsApp
+11. ✅ **Parallax scroll effects** - "Our Heritage" section with ambient scroll animation
+12. ✅ **Featured items management** - Simplified admin interface with search, preview cards, and drag-drop reordering
+13. ✅ **Menu page redesign** - Image carousels and restaurant-style layout
+14. ✅ **React Portals** - Modal rendering for checkout form (centered viewport positioning)
+15. ✅ SEO optimization with metadata
+16. ✅ Modern UI with glassmorphism effects
+17. ✅ Font optimization with Next.js font loader
+18. ✅ TypeScript for type safety
+19. ✅ Client-side only (no server dependencies)
 
 ### Styling Approach
 - CSS Modules for component-specific styles
@@ -427,10 +448,16 @@ npm run lint     # Run ESLint
   - Base64 storage in localStorage
   - Public folder fallback
   - Unoptimized images (required for static export)
+- **Video Handling**:
+  - Native HTML5 video element (replaced YouTube IFrame API)
+  - Local MP4 file (`Adpilo Kitchen.mp4`) in public folder
+  - Continuous loop playback
 - **Font Loading**: Next.js Font Optimization (Google Fonts - Outfit)
 - **Deployment**: GitHub Actions → FTP (shared hosting)
 - **Server Requirements**: None (fully static)
 - **Data Storage**: localStorage (menu items, featured items, cart)
+- **Checkout Integration**: WhatsApp API for order submission
+- **UI Components**: React Portals for modal rendering, Framer Motion for animations
 
 ## Key Architecture Decisions
 
@@ -440,8 +467,12 @@ npm run lint     # Run ESLint
 4. **Responsive Cart**: Different UX for desktop (sidebar) vs mobile (full-screen)
 5. **Toast Notifications**: Non-intrusive bottom slide-in notifications
 6. **Category Filtering**: Multi-select modal for flexible menu browsing
+7. **Local Video**: Replaced YouTube IFrame API with native HTML5 video for better performance and control
+8. **React Portals**: Used for checkout modal to ensure proper viewport centering and z-index layering
+9. **WhatsApp Integration**: Client-side order formatting and WhatsApp API for seamless checkout flow
+10. **Parallax Effects**: Scroll-based animations for enhanced visual experience
 
 ---
 
-*Last Updated: December 2024 - Static Export Build*
+*Last Updated: January 2025 - Latest Build with Video Hero & WhatsApp Checkout*
 

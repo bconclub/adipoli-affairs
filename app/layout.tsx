@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import Toast from "@/components/Toast";
-import FloatingCartButton from "@/components/FloatingCartButton";
+import ConditionalLayout from "@/components/ConditionalLayout";
 import { CartProvider } from "@/contexts/CartContext";
 
 const outfit = Outfit({
@@ -30,13 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={outfit.variable}>
         <CartProvider>
-          <Navbar />
-          <main style={{ minHeight: "100vh", paddingTop: "80px" }}>
-            {children}
-          </main>
-          <Footer />
-          <Toast />
-          <FloatingCartButton />
+          <ConditionalLayout>{children}</ConditionalLayout>
         </CartProvider>
       </body>
     </html>
