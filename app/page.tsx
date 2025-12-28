@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
-import styles from "./page.module.css";
 
 export default function Home() {
   const { addItem } = useCart();
@@ -29,43 +28,53 @@ export default function Home() {
           playerVars: {
             autoplay: 1,
             mute: 1,
+            loop: 1,
             controls: 0,
             showinfo: 0,
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
-            start: 9
+            start: 8,
+            end: 15
           },
           events: {
             onReady: (event: any) => {
-              // Start at 9 seconds
-              event.target.seekTo(9, true);
+              event.target.seekTo(8, true);
               event.target.playVideo();
-              
-              // Set up interval to check time and loop between 9-15 seconds
-              const checkLoop = () => {
+            },
+            onStateChange: (event: any) => {
+              // Check current time and loop between 8-15 seconds
+              const checkTime = () => {
                 if (player && player.getCurrentTime) {
-                  try {
-                    const currentTime = player.getCurrentTime();
-                    // If past 15 seconds or before 9 seconds, seek back to 9
-                    if (currentTime >= 15 || currentTime < 9) {
-                      player.seekTo(9, true);
-                    }
-                  } catch (e) {
-                    // Ignore errors during seeking
+                  const currentTime = player.getCurrentTime();
+                  if (currentTime >= 15) {
+                    player.seekTo(8, true);
+                    player.playVideo();
                   }
                 }
               };
               
-              // Check every 200ms to ensure we stay in the 9-15 second range
-              // @ts-ignore
-              player._loopInterval = setInterval(checkLoop, 200);
-            },
-            onStateChange: (event: any) => {
-              // When video ends, loop back to 9 seconds
-              if (event.data === 0) { // 0 = ended
-                event.target.seekTo(9, true);
-                event.target.playVideo();
+              // Check time every 100ms when playing
+              if (event.data === 1) { // 1 = playing
+                const interval = setInterval(() => {
+                  if (player && player.getCurrentTime) {
+                    const currentTime = player.getCurrentTime();
+                    if (currentTime >= 15) {
+                      player.seekTo(8, true);
+                      player.playVideo();
+                    }
+                  }
+                }, 100);
+                
+                // Store interval to clear later
+                // @ts-ignore
+                player._loopInterval = interval;
+              } else if (event.data === 2) { // 2 = paused
+                // @ts-ignore
+                if (player._loopInterval) {
+                  // @ts-ignore
+                  clearInterval(player._loopInterval);
+                }
               }
             }
           }
@@ -75,11 +84,6 @@ export default function Home() {
 
     return () => {
       if (player) {
-        // @ts-ignore
-        if (player._loopInterval) {
-          // @ts-ignore
-          clearInterval(player._loopInterval);
-        }
         player.destroy();
       }
     };
@@ -96,32 +100,67 @@ export default function Home() {
   };
 
   return (
-    <div className={styles.homeWrapper} style={{ marginTop: '-80px' }}>
+    <div className="home-wrapper" style={{ marginTop: '-80px' }}>
       {/* Hero Section - Full Screen */}
-      <section className={styles.heroSection}>
+      <section style={{ 
+        position: 'relative', 
+        height: '100vh', 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        width: '100%',
+        paddingTop: '80px', // Navbar height to prevent content from hiding
+        overflow: 'hidden'
+      }}>
         {/* YouTube Video Background */}
-        <div className={styles.videoContainer}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: -1,
+          overflow: 'hidden'
+        }}>
           <div
             ref={videoRef}
-            className={styles.videoWrapper}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '100vw',
+              height: '56.25vw', // 16:9 aspect ratio
+              minHeight: '100vh',
+              minWidth: '177.77vh', // 16:9 aspect ratio
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
+            }}
           />
           {/* Dark overlay for text readability */}
-          <div className={styles.overlay} />
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }} />
         </div>
-        <div className={`container ${styles.heroContent}`}>
-          <div className={styles.heroInner}>
-            <span className={`text-primary ${styles.heroWelcome}`}>
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ maxWidth: '800px' }}>
+            <span className="text-primary" style={{ fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem', display: 'block' }}>
               Welcome to Adipoli Affairs
             </span>
-            <h1 className={styles.heroTitle}>
+            <h1 style={{ fontSize: '4rem', marginBottom: '1.5rem', lineHeight: 1.1 }}>
               Authentic <span className="text-primary">Kerala Cuisine</span><br />
               in Christchurch
             </h1>
-            <p className={styles.heroDescription}>
+            <p style={{ fontSize: '1.25rem', color: '#cbd5e1', marginBottom: '2.5rem', maxWidth: '600px' }}>
               Experience the vibrant spices, coconut-rich curries, and traditional recipes
               from God's Own Country in a premium dining atmosphere.
             </p>
-            <div className={styles.heroButtons}>
+            <div style={{ display: 'flex', gap: '1rem' }}>
               <Link href="/menu" className="btn btn-primary">
                 Order Now <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
               </Link>
@@ -134,35 +173,35 @@ export default function Home() {
       </section>
 
       {/* Quick Info */}
-      <section className={`glass ${styles.quickInfo}`}>
-        <div className={styles.quickInfoItem}>
-          <Clock size={32} className={`text-primary ${styles.quickInfoIcon}`} />
-          <div className={styles.quickInfoContent}>
-            <h4>Opening Hours</h4>
-            <p>Mon-Sun: 11am - 10pm</p>
+      <section className="glass" style={{ transform: 'translateY(-50%)', maxWidth: '1000px', margin: '0 auto', padding: '2rem', borderRadius: '16px', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+        <div className="flex-center" style={{ gap: '1rem' }}>
+          <Clock size={32} className="text-primary" />
+          <div>
+            <h4 style={{ marginBottom: '0.2rem' }}>Opening Hours</h4>
+            <p style={{ margin: 0, fontSize: '0.9rem' }}>Mon-Sun: 11am - 10pm</p>
           </div>
         </div>
-        <div className={styles.quickInfoDivider} />
-        <div className={styles.quickInfoItem}>
-          <MapPin size={32} className={`text-primary ${styles.quickInfoIcon}`} />
-          <div className={styles.quickInfoContent}>
-            <h4>Location</h4>
-            <p>123 Riccarton Rd, CHCH</p>
+        <div style={{ width: '1px', height: '50px', background: 'rgba(255,255,255,0.1)' }} />
+        <div className="flex-center" style={{ gap: '1rem' }}>
+          <MapPin size={32} className="text-primary" />
+          <div>
+            <h4 style={{ marginBottom: '0.2rem' }}>Location</h4>
+            <p style={{ margin: 0, fontSize: '0.9rem' }}>123 Riccarton Rd, CHCH</p>
           </div>
         </div>
-        <div className={styles.quickInfoDivider} />
-        <div className={styles.quickInfoItem}>
-          <Star size={32} className={`text-primary ${styles.quickInfoIcon}`} />
-          <div className={styles.quickInfoContent}>
-            <h4>4.9/5 Rating</h4>
-            <p>Based on 500+ reviews</p>
+        <div style={{ width: '1px', height: '50px', background: 'rgba(255,255,255,0.1)' }} />
+        <div className="flex-center" style={{ gap: '1rem' }}>
+          <Star size={32} className="text-primary" />
+          <div>
+            <h4 style={{ marginBottom: '0.2rem' }}>4.9/5 Rating</h4>
+            <p style={{ margin: 0, fontSize: '0.9rem' }}>Based on 500+ reviews</p>
           </div>
         </div>
       </section>
 
       {/* Featured Dishes Preview */}
-      <section className={`section container ${styles.featuredSection}`}>
-        <div className={styles.featuredHeader}>
+      <section className="section container">
+        <div className="flex-between mb-8">
           <div>
             <h2 className="text-primary">Signature Dishes</h2>
             <p>Our chef's most recommended authentic delicacies.</p>
@@ -170,24 +209,25 @@ export default function Home() {
           <Link href="/menu" className="btn btn-outline">View Full Menu</Link>
         </div>
 
-        <div className={styles.featuredGrid}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           {[
             { name: "Kerala Beef Fry", img: "/images/beef.png", price: "$22.00", desc: "Spicy roasted beef with coconut slices." },
             { name: "Chatti Biryani", img: "/images/biryani.png", price: "$28.50", desc: "Layered rice and meat cooked in clay pot." },
             { name: "Nidhi Chicken", img: "/images/chicken.png", price: "$24.99", desc: "Creamy roasted chicken curry." }
           ].map((item, idx) => (
-            <div key={idx} className={`glass-card ${styles.featuredCard}`}>
-              <div className={styles.featuredImage}>
+            <div key={idx} className="glass-card" style={{ overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '250px' }}>
                 <Image src={item.img} alt={item.name} fill style={{ objectFit: 'cover' }} />
               </div>
-              <div className={styles.featuredCardContent}>
-                <div className={styles.featuredCardHeader}>
+              <div style={{ padding: '1.5rem' }}>
+                <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
                   <h3>{item.name}</h3>
-                  <span className={`text-primary ${styles.featuredCardPrice}`}>{item.price}</span>
+                  <span className="text-primary" style={{ fontWeight: '700' }}>{item.price}</span>
                 </div>
                 <p>{item.desc}</p>
                 <button 
-                  className={`btn btn-primary ${styles.featuredCardButton}`}
+                  className="btn btn-primary" 
+                  style={{ width: '100%', marginTop: '1rem' }}
                   onClick={() => handleAddToOrder(item)}
                 >
                   Add to Order
@@ -199,23 +239,23 @@ export default function Home() {
       </section>
 
       {/* About Snippet */}
-      <section className={`section ${styles.aboutSection}`}>
-        <div className={`container ${styles.aboutGrid}`}>
-          <div className={styles.aboutImage}>
+      <section className="section" style={{ background: 'var(--surface)' }}>
+        <div className="container grid" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
+          <div style={{ position: 'relative', height: '500px', borderRadius: '24px', overflow: 'hidden' }}>
             <Image src="/images/hero.png" alt="Chef" fill style={{ objectFit: 'cover' }} />
           </div>
-          <div className={styles.aboutContent}>
+          <div style={{ padding: '2rem' }}>
             <h2 className="text-primary">Our Heritage</h2>
-            <h3 className={styles.aboutTitle}>Bringing Kerala to Your Plate</h3>
+            <h3 style={{ marginBottom: '1.5rem', fontSize: '2.5rem' }}>Bringing Kerala to Your Plate</h3>
             <p style={{ marginBottom: '1.5rem' }}>
               Adipoli Affairs started with a simple mission: to serve the most authentic Kerala cuisine
               using traditional recipes passed down through generations. Our chefs use only the
               freshest local ingredients combined with spices imported directly from the spice gardens of Kerala.
             </p>
-            <ul className={styles.aboutList}>
+            <ul style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
               {['Halal Certified', 'Authentic Spices', 'Fresh Ingredients', 'Traditional Recipes'].map(tag => (
-                <li key={tag} className={styles.aboutListItem}>
-                  <div className={styles.aboutListDot} />
+                <li key={tag} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
                   {tag}
                 </li>
               ))}

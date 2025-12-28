@@ -7,23 +7,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Play, Pause, ChevronLeft, ChevronRight, Maximize, Minimize, Settings, X, RotateCcw, Clock
 } from "lucide-react";
-import { loadFeaturedItems, type FeaturedItem } from "@/lib/menuData";
+import { loadMenuItems, type MenuItem } from "@/lib/menuData";
 import styles from "./Featured.module.css";
+
+interface FeaturedItem {
+    id: number;
+    name: string;
+    price: string;
+    image: string;
+    description: string;
+}
 
 export default function FeaturedPage() {
     const [items, setItems] = useState<FeaturedItem[]>([]);
-    
-    useEffect(() => {
-        const loadItems = async () => {
-            try {
-                const items = await loadFeaturedItems();
-                setItems(items);
-            } catch (error) {
-                console.error('Error loading featured items:', error);
-            }
-        };
-        loadItems();
-    }, []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
     const [duration, setDuration] = useState(5000); // ms
@@ -31,49 +27,141 @@ export default function FeaturedPage() {
     const [progress, setProgress] = useState(0);
     const [fullScreen, setFullScreen] = useState(true);
 
-    const handleNext = useCallback(() => {
+    // Helper function to get fallback image
+    const getFallbackImage = (name: string): string => {
+        if (!name) return '/images/hero.png';
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('chicken')) return "/images/chicken.png";
+        if (lowerName.includes('beef')) return "/images/beef.png";
+        if (lowerName.includes('biryani')) return "/images/biryani.png";
+        return "/images/hero.png";
+    };
+
+    // Load featured menu items
+    useEffect(() => {
+        const loadFeaturedItems = async () => {
+            try {
+                const menuItems = await loadMenuItems();
+                console.log('Loaded menu items:', menuItems.length);
+                const featuredItems = menuItems
+                    .filter(item => item.featured === true)
+                    .map(item => {
+                        const priceStr = typeof item.price === 'number' 
+                            ? `$${item.price.toFixed(2)}`
+                            : item.price.half && item.price.full
+                            ? `$${item.price.half.toFixed(2)} / $${item.price.full.toFixed(2)}`
+                            : `$${(item.price.half || item.price.full || 0).toFixed(2)}`;
+                        
+                        // Get image path - use item.image if it's a valid path, otherwise construct from category/name
+                        let imagePath = item.image;
+                        
+                        // If image is empty or invalid, try to construct from category and name
+                        if (!imagePath || imagePath === '/images/hero.png' || (!imagePath.startsWith('/') && !imagePath.startsWith('http'))) {
+                            // Try to construct path from category and name (like menu page does)
+                            const sanitizeName = (str: string) => {
+                                if (!str) return '';
+                                return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                            };
+                            
+                            const sanitizedCategory = sanitizeName(item.category);
+                            const sanitizedProductName = sanitizeName(item.name);
+                            
+                            if (sanitizedCategory && sanitizedProductName) {
+                                imagePath = `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
+                            } else {
+                                imagePath = getFallbackImage(item.name);
+                            }
+                        }
+                        
+                        // Ensure it starts with / or http
+                        if (!imagePath.startsWith('/') && !imagePath.startsWith('http')) {
+                            imagePath = getFallbackImage(item.name);
+                        }
+                        
+                        return {
+                            id: item.id,
+                            name: item.name,
+                            price: priceStr,
+                            image: imagePath,
+                            description: item.desc || ''
+                        };
+                    });
+                
+                console.log('Featured items:', featuredItems.length, featuredItems);
+                
+                if (featuredItems.length > 0) {
+                    setItems(featuredItems);
+                    setCurrentIndex(0); // Reset to first item
+                } else {
+                    setItems([]);
+                }
+            } catch (error) {
+                console.error('Error loading featured items:', error);
+            }
+        };
+        
+        loadFeaturedItems();
+        
+        // Reload when page becomes visible (in case items were updated)
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                loadFeaturedItems();
+            }
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    // Auto-play Logic
+    useEffect(() => {
         if (items.length === 0) return;
-        setCurrentIndex((prev) => (prev + 1) % items.length);
+        
+        let interval: NodeJS.Timeout;
+        let progressInterval: NodeJS.Timeout;
+
+        if (isPlaying && items.length > 0) {
+            const step = 50; // Update every 50ms
+            interval = setInterval(() => {
+                setCurrentIndex((prev) => (prev + 1) % items.length);
+            }, duration);
+
+            progressInterval = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 100) return 0;
+                    return prev + (step / duration) * 100;
+                });
+            }, step);
+        } else {
+            setProgress(0);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+            if (progressInterval) clearInterval(progressInterval);
+        };
+    }, [isPlaying, duration, items.length]); // Use items.length instead of currentIndex
+
+    // Reset progress when index changes manually
+    useEffect(() => {
+        setProgress(0);
+    }, [currentIndex]);
+
+    const handleNext = useCallback(() => {
+        if (items.length > 0) {
+            setCurrentIndex((prev) => (prev + 1) % items.length);
+            setProgress(0); // Reset progress when manually changing
+        }
     }, [items.length]);
 
     const handlePrev = () => {
-        if (items.length === 0) return;
-        setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    };
-
-    // Auto-play Logic - cycle through all products
-    useEffect(() => {
-        if (!isPlaying || items.length === 0) return;
-
-        const interval = setInterval(() => {
-            handleNext();
-        }, duration);
-
-        return () => {
-            clearInterval(interval);
-        };
-    }, [isPlaying, duration, handleNext, items.length]);
-
-    // Progress bar update - resets when slide changes
-    useEffect(() => {
-        setProgress(0); // Reset progress when slide changes
-        
-        if (!isPlaying || items.length === 0) {
-            return;
+        if (items.length > 0) {
+            setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
         }
-
-        const step = 50; // Update every 50ms
-        const progressInterval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) return 0;
-                return prev + (step / duration) * 100;
-            });
-        }, step);
-
-        return () => {
-            clearInterval(progressInterval);
-        };
-    }, [isPlaying, duration, currentIndex, items.length]);
+    };
 
     const toggleFullScreen = () => {
         if (!document.fullscreenElement) {
@@ -90,10 +178,14 @@ export default function FeaturedPage() {
     if (items.length === 0) {
         return (
             <div className={styles.container} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ textAlign: 'center', color: 'white' }}>
-                    <h2>No featured items</h2>
-                    <p style={{ marginTop: '1rem' }}>Please add featured items from the admin panel.</p>
-                    <Link href="/admin" className="btn btn-primary" style={{ marginTop: '1rem' }}>Go to Admin Panel</Link>
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Featured Items</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                        Please mark some menu items as featured in the admin panel.
+                    </p>
+                    <Link href="/admin" className="btn btn-primary">
+                        Go to Admin Panel
+                    </Link>
                 </div>
             </div>
         );
@@ -102,7 +194,7 @@ export default function FeaturedPage() {
     return (
         <div className={styles.container}>
             {/* Progress Bar */}
-            {isPlaying && <div className={styles.progressBar} style={{ width: `${progress}%`, transition: 'width 0.05s linear' }} />}
+            {isPlaying && items.length > 0 && <div className={styles.progressBar} style={{ width: `${progress}%`, transition: 'width 0.05s linear' }} />}
 
             {/* Top Controls */}
             <div className={styles.topControls}>
@@ -165,23 +257,45 @@ export default function FeaturedPage() {
             </AnimatePresence>
 
             {/* Main Slideshow */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={currentIndex}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className={styles.slide}
-                >
+            {items.length > 0 && (
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={currentIndex}
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className={styles.slide}
+                    >
                     <div className={styles.imageOverlay} />
-                    <Image
-                        src={items[currentIndex].image}
-                        alt={items[currentIndex].name}
-                        fill
-                        className={styles.image}
-                        priority
-                    />
+                    {items[currentIndex]?.image && (
+                        <img
+                            src={items[currentIndex].image}
+                            alt={items[currentIndex].name}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center'
+                            }}
+                            onError={(e) => {
+                                // Fallback to default image if the image fails to load
+                                const target = e.target as HTMLImageElement;
+                                const fallback = getFallbackImage(items[currentIndex]?.name);
+                                const fallbackUrl = new URL(fallback, window.location.origin).href;
+                                if (target.src !== fallbackUrl) {
+                                    console.log(`Image failed to load: ${target.src}, using fallback: ${fallback}`);
+                                    target.src = fallback;
+                                }
+                            }}
+                            onLoad={() => {
+                                console.log(`Image loaded successfully: ${items[currentIndex]?.image}`);
+                            }}
+                        />
+                    )}
 
                     <motion.div
                         initial={{ opacity: 0, y: 50 }}
@@ -191,11 +305,10 @@ export default function FeaturedPage() {
                     >
                         <div className={styles.info}>
                             <div className={styles.priceTag}>
-                                <span className={styles.price}>{items[currentIndex].price}</span>
-                                <span style={{ color: '#ccc', fontSize: '0.9rem' }}>| {items[currentIndex].calories}</span>
+                                <span className={styles.price}>{items[currentIndex]?.price || ''}</span>
                             </div>
-                            <h1 className={styles.title}>{items[currentIndex].name}</h1>
-                            <p className={styles.description}>{items[currentIndex].description}</p>
+                            <h1 className={styles.title}>{items[currentIndex]?.name || ''}</h1>
+                            <p className={styles.description}>{items[currentIndex]?.description || ''}</p>
 
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <button className="btn btn-primary">Order Now</button>
@@ -217,6 +330,7 @@ export default function FeaturedPage() {
                     </motion.div>
                 </motion.div>
             </AnimatePresence>
+            )}
         </div>
     );
 }

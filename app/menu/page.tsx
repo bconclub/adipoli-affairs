@@ -118,10 +118,9 @@ const getImageForItem = (name: string | undefined | null, category: string | und
 };
 
 // Helper function to generate description
-const getDescription = (item: { name: string; description?: string } | null | undefined): string => {
-    if (!item) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
-    if (item.description && item.description.trim()) return item.description;
-    return `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
+const getDescription = (name: string | undefined | null): string => {
+    if (!name) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
+    return `Delicious ${name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
 };
 
 // Transform menu data to MenuItem format
@@ -141,7 +140,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 16.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item),
+                    desc: getDescription(item.name),
                 });
                 items.push({
                     id: id++,
@@ -149,7 +148,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 29.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item),
+                    desc: getDescription(item.name),
                 });
                 return;
             }
@@ -160,7 +159,7 @@ const transformMenuData = (): MenuItem[] => {
                 price: item.price,
                 category: displayCategory,
                 image: getImageForItem(item.name, displayCategory),
-                desc: getDescription(item),
+                desc: getDescription(item.name),
             });
         });
     });
@@ -176,42 +175,38 @@ export default function MenuPage() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const { addItem } = useCart();
 
-    // Load menu items from server API
+    // Load menu items from localStorage (same as admin panel uses)
     useEffect(() => {
         const loadItems = async () => {
-            // Always have fallback data ready
-            const transformedItems = transformMenuData();
-            
             try {
-                // Try to load from server API (for admin panel updates)
+                // First ensure localStorage is initialized with default data if empty
+                const transformedItems = transformMenuData();
+                const initializedItems = await initializeMenuItems(transformedItems);
+                
+                // Then load the actual data (which admin panel updates)
                 const items = await loadMenuItems();
                 
-                // Use server data if available and not empty, otherwise use fallback
-                if (items && items.length > 0) {
+                // Ensure we have an array
+                if (Array.isArray(items) && items.length > 0) {
                     setMenuItems(items);
-                    console.log(`Loaded ${items.length} menu items from server`);
+                } else if (Array.isArray(initializedItems) && initializedItems.length > 0) {
+                    // Fallback to initialized items if loadMenuItems returns empty
+                    setMenuItems(initializedItems);
                 } else {
-                    // Initialize server with default data if empty
-                    try {
-                        await initializeMenuItems(transformedItems);
-                    } catch (initError) {
-                        console.warn('Could not initialize server menu data:', initError);
-                    }
-                    // Use transformed menu data as fallback
+                    // Last resort: use transformed items
                     setMenuItems(transformedItems);
-                    console.log(`Using ${transformedItems.length} menu items from local data`);
                 }
             } catch (error) {
-                console.warn('Error loading menu items from server, using local data:', error);
-                // Fallback to transformed menu data on error
+                console.error('Error loading menu items:', error);
+                // Fallback to transformed items on error
+                const transformedItems = transformMenuData();
                 setMenuItems(transformedItems);
-                console.log(`Using ${transformedItems.length} menu items from local data`);
             }
         };
         
         loadItems();
         
-        // Reload when page becomes visible (in case server data was updated)
+        // Reload when page becomes visible (in case localStorage was updated)
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 loadItems();
@@ -350,16 +345,6 @@ export default function MenuPage() {
                             {cat}
                         </button>
                     ))}
-                </div>
-
-                {/* Filter and Search - Side by Side */}
-                <div style={{ 
-                    display: 'flex', 
-                    gap: '1rem', 
-                    alignItems: 'center',
-                    flexWrap: 'nowrap'
-                }}>
-                    {/* Filter Button */}
                     <button
                         onClick={() => setShowFilterModal(true)}
                         className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
@@ -368,10 +353,10 @@ export default function MenuPage() {
                             whiteSpace: 'nowrap', 
                             fontSize: '0.9rem', 
                             padding: '0.5rem 1.25rem',
+                            flexShrink: 0,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem',
-                            flexShrink: 0
+                            gap: '0.5rem'
                         }}
                     >
                         <Filter size={16} />
@@ -392,26 +377,26 @@ export default function MenuPage() {
                             </span>
                         )}
                     </button>
+                </div>
 
-                    {/* Search Bar */}
-                    <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search dishes..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{
-                                width: '100%', 
-                                padding: '0.75rem 1rem 0.75rem 3rem', 
-                                borderRadius: '50px',
-                                background: 'rgba(255,255,255,0.05)', 
-                                border: '1px solid rgba(255,255,255,0.1)', 
-                                color: 'white',
-                                fontSize: '0.95rem'
-                            }}
-                        />
-                    </div>
+                {/* Search Bar */}
+                <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                    <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search dishes..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{
+                            width: '100%', 
+                            padding: '0.75rem 1rem 0.75rem 3rem', 
+                            borderRadius: '50px',
+                            background: 'rgba(255,255,255,0.05)', 
+                            border: '1px solid rgba(255,255,255,0.1)', 
+                            color: 'white',
+                            fontSize: '0.95rem'
+                        }}
+                    />
                 </div>
             </div>
 
@@ -499,42 +484,29 @@ export default function MenuPage() {
                             onClick={() => setShowFilterModal(false)}
                         />
 
-                        {/* Modal Wrapper - Centers the modal */}
-                        <div
+                        {/* Modal */}
+                        <motion.div
                             style={{
                                 position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                background: 'var(--surface)',
+                                borderRadius: '16px',
+                                padding: '2rem',
+                                maxWidth: '90vw',
+                                width: '500px',
+                                maxHeight: '80vh',
+                                overflowY: 'auto',
                                 zIndex: 1001,
-                                pointerEvents: 'none'
+                                border: '1px solid var(--glass-border)',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
                             }}
+                            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -20 }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Modal */}
-                            <motion.div
-                                style={{
-                                    background: 'var(--surface)',
-                                    borderRadius: '16px',
-                                    padding: '2rem',
-                                    width: 'calc(100vw - 2rem)',
-                                    maxWidth: '500px',
-                                    maxHeight: '80vh',
-                                    overflowY: 'auto',
-                                    border: '1px solid var(--glass-border)',
-                                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                                    boxSizing: 'border-box',
-                                    pointerEvents: 'auto'
-                                }}
-                                initial={{ opacity: 0, scale: 0.9, y: -20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
                             {/* Header */}
                             <div style={{ 
                                 display: 'flex', 
@@ -544,7 +516,7 @@ export default function MenuPage() {
                                 paddingBottom: '1rem',
                                 borderBottom: '1px solid var(--glass-border)'
                             }}>
-                                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Filter Categories</h2>
+                                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Filter Categories</h2>
                                 <button
                                     onClick={() => setShowFilterModal(false)}
                                     style={{
@@ -565,7 +537,7 @@ export default function MenuPage() {
                             {/* Categories List */}
                             <div style={{ 
                                 display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                                 gap: '0.75rem',
                                 marginBottom: '1.5rem'
                             }}>
@@ -632,8 +604,7 @@ export default function MenuPage() {
                                     Apply
                                 </button>
                             </div>
-                            </motion.div>
-                        </div>
+                        </motion.div>
                     </>
                 )}
             </AnimatePresence>
