@@ -775,39 +775,61 @@ function MenuItemForm({
         }
     }, [item, categories]);
 
-    const handleCropComplete = async (croppedImageDataUrl: string) => {
-        if (!originalFile || !formData.category) return;
+    const handleCropComplete = async (croppedImageDataUrl: string, isFeatured: boolean = false) => {
+        const file = isFeatured ? originalFeaturedFile : originalFile;
+        if (!file || !formData.category) return;
         
-        setShowCropper(false);
-        setIsUploading(true);
+        if (isFeatured) {
+            setShowFeaturedCropper(false);
+            setIsUploadingFeatured(true);
+        } else {
+            setShowCropper(false);
+            setIsUploading(true);
+        }
         
         try {
             // Convert data URL to File
             const response = await fetch(croppedImageDataUrl);
             const blob = await response.blob();
-            const croppedFile = new File([blob], originalFile.name, { type: 'image/jpeg' });
+            const croppedFile = new File([blob], file.name, { type: 'image/jpeg' });
             
-            const productName = formData.name || originalFile.name.split('.')[0];
+            const productName = formData.name || file.name.split('.')[0];
             
             // Upload to server via PHP endpoint (no compression)
             const imagePath = await uploadImage(croppedFile, formData.category, productName);
             
             if (imagePath) {
                 // Update form with the image path
-                setFormData({ ...formData, image: imagePath });
+                if (isFeatured) {
+                    setFormData({ ...formData, featuredImage: imagePath });
+                } else {
+                    setFormData({ ...formData, image: imagePath });
+                }
             } else {
                 alert('Failed to upload image. Please try again.');
             }
             
-            setIsUploading(false);
-            setImageToCrop(null);
-            setOriginalFile(null);
+            if (isFeatured) {
+                setIsUploadingFeatured(false);
+                setFeaturedImageToCrop(null);
+                setOriginalFeaturedFile(null);
+            } else {
+                setIsUploading(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            }
         } catch (error) {
             console.error('Image upload error:', error);
             alert('Failed to upload image. Please try again.');
-            setIsUploading(false);
-            setImageToCrop(null);
-            setOriginalFile(null);
+            if (isFeatured) {
+                setIsUploadingFeatured(false);
+                setFeaturedImageToCrop(null);
+                setOriginalFeaturedFile(null);
+            } else {
+                setIsUploading(false);
+                setImageToCrop(null);
+                setOriginalFile(null);
+            }
         }
     };
 
