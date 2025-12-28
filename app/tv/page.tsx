@@ -26,6 +26,30 @@ const FADE_DURATION = 1; // 1 second fade transition
 export default function TVSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Hide header and ensure full screen
+  useEffect(() => {
+    // Hide any navbar/header elements
+    const navbars = document.querySelectorAll("nav, header, [class*='Navbar'], [class*='navbar']");
+    navbars.forEach((el) => {
+      (el as HTMLElement).style.display = "none";
+    });
+
+    // Ensure body and html are full screen with no padding/margin
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.margin = "0";
+    document.documentElement.style.padding = "0";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      // Cleanup on unmount (restore styles if needed)
+      navbars.forEach((el) => {
+        (el as HTMLElement).style.display = "";
+      });
+    };
+  }, []);
+
   useEffect(() => {
     if (TV_SLIDES.length === 0) return;
 

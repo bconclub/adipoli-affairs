@@ -11,6 +11,15 @@
   justify-content: center;
   margin: 0;
   padding: 0;
+  z-index: 9999;
+}
+
+/* Hide any header/navbar elements on TV page */
+:global(header),
+:global(nav),
+:global(.navbar),
+:global([class*="Navbar"]) {
+  display: none !important;
 }
 
 .slideWrapper {
