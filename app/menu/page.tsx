@@ -227,18 +227,29 @@ export default function MenuPage() {
         };
     }, []);
 
-    const filteredItems = menuItems.filter(item => {
-        let matchesCategory = false;
-        if (activeCategory === "All" && selectedCategories.length === 0) {
-            matchesCategory = true;
-        } else if (activeCategory !== "All") {
-            matchesCategory = item.category === activeCategory;
-        } else if (selectedCategories.length > 0) {
-            matchesCategory = selectedCategories.includes(item.category);
-        }
-        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+    const filteredItems = menuItems
+        .filter(item => {
+            let matchesCategory = false;
+            if (activeCategory === "All" && selectedCategories.length === 0) {
+                matchesCategory = true;
+            } else if (activeCategory !== "All") {
+                matchesCategory = item.category === activeCategory;
+            } else if (selectedCategories.length > 0) {
+                matchesCategory = selectedCategories.includes(item.category);
+            }
+            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        })
+        .sort((a, b) => {
+            // Sort by price (low to high) when a category is selected
+            if (activeCategory !== "All" || selectedCategories.length > 0) {
+                const priceA = getPriceValue(a.price);
+                const priceB = getPriceValue(b.price);
+                return priceA - priceB;
+            }
+            // Keep original order when "All" is selected
+            return 0;
+        });
 
     const handleCategoryToggle = (category: string) => {
         if (category === "All") return;

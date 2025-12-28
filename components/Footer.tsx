@@ -43,14 +43,17 @@ export default function Footer() {
                 <div className={styles.contactSection}>
                     <h4>Contact Us</h4>
                     <address>
-                        <p>123 Riccarton Road</p>
-                        <p>Christchurch, New Zealand</p>
+                        <p>378a Ferry Road</p>
+                        <p>Woolston, Christchurch</p>
+                        <p>New Zealand</p>
                         <p className={styles.contactItem}>Draft Phone: +64 3 123 4567</p>
                         <p className={styles.contactItem}>Email: hello@adipoliaffairs.nz</p>
                     </address>
                     <div className={styles.hours}>
-                        <p><strong>Open Daily:</strong></p>
-                        <p>11:00 AM - 10:00 PM</p>
+                        <p><strong>Opening Hours:</strong></p>
+                        <p>Monday: 12:00 PM - 10:00 PM</p>
+                        <p>Tuesday: Closed</p>
+                        <p>Wednesday - Sunday: 12:00 PM - 10:00 PM</p>
                     </div>
                 </div>
             </div>
