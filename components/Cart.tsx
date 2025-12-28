@@ -86,7 +86,7 @@ export default function Cart() {
             return `• ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`;
         }).join('\n');
 
-        const message = `🍽️ *New Order from Adipoli Affairs*
+        const message = `*New Order from Adipoli Affairs*
 
 *Customer Details:*
 Name: ${name}
@@ -100,7 +100,7 @@ Subtotal: $${total.toFixed(2)}
 Tax (15%): $${tax.toFixed(2)}
 *Total: $${finalTotal.toFixed(2)}*
 
-Thank you for your order! 🙏`;
+Thank you for your order!`;
 
         return encodeURIComponent(message);
     };
@@ -334,7 +334,7 @@ Thank you for your order! 🙏`;
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
                                 <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem' }}>Order Details</h2>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                     Please provide your details to complete your order
@@ -346,7 +346,8 @@ Thank you for your order! 🙏`;
                                     display: 'block', 
                                     marginBottom: '0.5rem', 
                                     fontWeight: '500',
-                                    fontSize: '0.9rem'
+                                    fontSize: '0.9rem',
+                                    textAlign: 'center'
                                 }}>
                                     Full Name *
                                 </label>
@@ -362,7 +363,8 @@ Thank you for your order! 🙏`;
                                         background: 'rgba(255,255,255,0.05)',
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         color: 'white',
-                                        fontSize: '1rem'
+                                        fontSize: '1rem',
+                                        textAlign: 'center'
                                     }}
                                     autoFocus
                                 />
@@ -373,7 +375,8 @@ Thank you for your order! 🙏`;
                                     display: 'block', 
                                     marginBottom: '0.5rem', 
                                     fontWeight: '500',
-                                    fontSize: '0.9rem'
+                                    fontSize: '0.9rem',
+                                    textAlign: 'center'
                                 }}>
                                     Phone Number *
                                 </label>
@@ -389,7 +392,8 @@ Thank you for your order! 🙏`;
                                         background: 'rgba(255,255,255,0.05)',
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         color: 'white',
-                                        fontSize: '1rem'
+                                        fontSize: '1rem',
+                                        textAlign: 'center'
                                     }}
                                 />
                             </div>
@@ -397,7 +401,7 @@ Thank you for your order! 🙏`;
                             <div style={{ 
                                 display: 'flex', 
                                 gap: '1rem',
-                                justifyContent: 'flex-end'
+                                justifyContent: 'center'
                             }}>
                                 <button
                                     className="btn btn-outline"

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Filter, X, Check } from 'lucide-react';
+import { Search, Filter, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { useCart } from '@/contexts/CartContext';
@@ -173,6 +173,7 @@ export default function MenuPage() {
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+    const [categoryScrollPositions, setCategoryScrollPositions] = useState<Record<string, number>>({});
     const { addItem } = useCart();
 
     // Load menu items from localStorage (same as admin panel uses)
@@ -187,15 +188,13 @@ export default function MenuPage() {
                 const items = await loadMenuItems();
                 
                 // Ensure we have an array
-                if (Array.isArray(items) && items.length > 0) {
-                    setMenuItems(items);
-                } else if (Array.isArray(initializedItems) && initializedItems.length > 0) {
-                    // Fallback to initialized items if loadMenuItems returns empty
-                    setMenuItems(initializedItems);
-                } else {
-                    // Last resort: use transformed items
-                    setMenuItems(transformedItems);
-                }
+                const finalItems = Array.isArray(items) && items.length > 0 
+                    ? items 
+                    : (Array.isArray(initializedItems) && initializedItems.length > 0 
+                        ? initializedItems 
+                        : transformedItems);
+                
+                setMenuItems(finalItems);
             } catch (error) {
                 console.error('Error loading menu items:', error);
                 // Fallback to transformed items on error
@@ -309,12 +308,38 @@ export default function MenuPage() {
         });
     };
 
+    // Group items by category
+    const itemsByCategory = useMemo(() => {
+        const grouped: Record<string, MenuItem[]> = {};
+        filteredItems.forEach(item => {
+            if (!grouped[item.category]) {
+                grouped[item.category] = [];
+            }
+            grouped[item.category].push(item);
+        });
+        return grouped;
+    }, [filteredItems]);
+
+    // Scroll category carousel
+    const scrollCategory = (category: string, direction: 'left' | 'right') => {
+        const container = document.getElementById(`category-${category}`);
+        if (!container) return;
+        
+        const scrollAmount = 400;
+        const newPosition = direction === 'left' 
+            ? container.scrollLeft - scrollAmount 
+            : container.scrollLeft + scrollAmount;
+        
+        container.scrollTo({ left: newPosition, behavior: 'smooth' });
+        setCategoryScrollPositions(prev => ({ ...prev, [category]: newPosition }));
+    };
+
     return (
         <div className="container section">
-            <div className="text-center mb-8">
-                <h1 className="text-primary">Our Menu</h1>
-                <p>Explore the diverse flavors of Kerala cuisine.</p>
-            </div>
+                <div className="text-center mb-8">
+                    <h1 className="text-primary">Our Menu</h1>
+                    <p>Explore the diverse flavors of Kerala cuisine.</p>
+                </div>
 
             {/* Controls */}
             <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem' }}>
@@ -417,62 +442,283 @@ export default function MenuPage() {
                 </div>
             </div>
 
-            {/* Grid */}
+            {/* Category Sections with Carousels */}
             {filteredItems.length > 0 ? (
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                {filteredItems.map(item => {
-                    // Check if image is a base64 data URL, otherwise use public folder path
-                    const imagePath = item?.image?.startsWith('data:image/') 
-                        ? item.image 
-                        : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
-                    
-                    return (
-                    <div key={item.id} className="glass-card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ 
-                            position: 'relative', 
-                            width: '100%', 
-                            aspectRatio: '16/9',
-                            overflow: 'hidden',
-                            backgroundColor: 'rgba(0,0,0,0.2)'
-                        }}>
-                            <img 
-                                src={imagePath} 
-                                alt={item.name} 
-                                style={{ 
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'center center'
-                                }}
-                                onError={(e) => {
-                                    // If image from public folder doesn't exist and it's not a base64, use fallback
-                                    const target = e.target as HTMLImageElement;
-                                    if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
-                                        target.src = getFallbackImage(item.name);
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <div className="flex-between" style={{ marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                    <h3 style={{ fontSize: '1.25rem', lineHeight: '1.3', textTransform: 'none' }}>{formatProductName(item.name)}</h3>
-                                    <span className="text-primary" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                                        {formatPrice(item.price)}
-                                    </span>
+                activeCategory === "All" && selectedCategories.length === 0 && searchQuery === "" ? (
+                    // Show all categories as carousels
+                    Object.entries(itemsByCategory).map(([category, items]) => (
+                        <section key={category} style={{ marginBottom: '4rem' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+                                    {category}
+                                </h2>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        onClick={() => scrollCategory(category, 'left')}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '50%',
+                                            width: '40px',
+                                            height: '40px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'var(--primary)';
+                                            e.currentTarget.style.borderColor = 'var(--primary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        }}
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() => scrollCategory(category, 'right')}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '50%',
+                                            width: '40px',
+                                            height: '40px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'var(--primary)';
+                                            e.currentTarget.style.borderColor = 'var(--primary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        }}
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
                             </div>
-                                <p style={{ fontSize: '0.9rem', marginBottom: '1rem', flex: 1, color: 'var(--text-secondary)' }}>{item.desc}</p>
-                            <button 
-                              className="btn btn-primary" 
-                              style={{ width: '100%' }}
-                              onClick={() => handleAddToOrder(item)}
+                            <div
+                                id={`category-${category}`}
+                                style={{
+                                    display: 'flex',
+                                    gap: '1.5rem',
+                                    overflowX: 'auto',
+                                    overflowY: 'hidden',
+                                    paddingBottom: '1rem',
+                                    scrollbarWidth: 'thin',
+                                    scrollbarColor: 'var(--primary) transparent',
+                                    WebkitOverflowScrolling: 'touch',
+                                    scrollBehavior: 'smooth'
+                                }}
                             >
-                                Add to Order
-                            </button>
-                        </div>
+                                {items.map(item => {
+                                    const imagePath = item?.image?.startsWith('data:image/') 
+                                        ? item.image 
+                                        : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
+                                    
+                                    return (
+                                        <motion.div
+                                            key={item.id}
+                                            whileHover={{ scale: 1.05, y: -8 }}
+                                            transition={{ duration: 0.3 }}
+                                            style={{
+                                                minWidth: '320px',
+                                                maxWidth: '320px',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                borderRadius: '16px',
+                                                overflow: 'hidden',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.3s'
+                                            }}
+                                            onClick={() => handleAddToOrder(item)}
+                                        >
+                                            <div style={{
+                                                position: 'relative',
+                                                width: '100%',
+                                                height: '240px',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <img
+                                                    src={imagePath}
+                                                    alt={item.name}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        objectPosition: 'center'
+                                                    }}
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
+                                                            target.src = getFallbackImage(item.name);
+                                                        }
+                                                    }}
+                                                />
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '1rem',
+                                                    right: '1rem',
+                                                    background: 'var(--primary)',
+                                                    color: 'white',
+                                                    padding: '0.5rem 1rem',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '1rem'
+                                                }}>
+                                                    {formatPrice(item.price)}
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                <h3 style={{ 
+                                                    fontSize: '1.25rem', 
+                                                    marginBottom: '0.5rem',
+                                                    fontWeight: '600',
+                                                    color: 'var(--text-main)'
+                                                }}>
+                                                    {formatProductName(item.name)}
+                                                </h3>
+                                                <p style={{ 
+                                                    fontSize: '0.9rem', 
+                                                    color: 'var(--text-secondary)',
+                                                    marginBottom: '1rem',
+                                                    flex: 1,
+                                                    lineHeight: '1.5',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    {item.desc}
+                                                </p>
+                                                <button
+                                                    className="btn btn-primary"
+                                                    style={{ width: '100%' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAddToOrder(item);
+                                                    }}
+                                                >
+                                                    Add to Order
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    ))
+                ) : (
+                    // Show filtered items in grid
+                    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
+                        {filteredItems.map(item => {
+                            const imagePath = item?.image?.startsWith('data:image/') 
+                                ? item.image 
+                                : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
+                            
+                            return (
+                                <motion.div
+                                    key={item.id}
+                                    whileHover={{ scale: 1.03, y: -5 }}
+                                    transition={{ duration: 0.3 }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.05)',
+                                        borderRadius: '16px',
+                                        overflow: 'hidden',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => handleAddToOrder(item)}
+                                >
+                                    <div style={{
+                                        position: 'relative',
+                                        width: '100%',
+                                        height: '240px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <img
+                                            src={imagePath}
+                                            alt={item.name}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                objectPosition: 'center'
+                                            }}
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
+                                                    target.src = getFallbackImage(item.name);
+                                                }
+                                            }}
+                                        />
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '1rem',
+                                            right: '1rem',
+                                            background: 'var(--primary)',
+                                            color: 'white',
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold',
+                                            fontSize: '1rem'
+                                        }}>
+                                            {formatPrice(item.price)}
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            marginBottom: '0.5rem',
+                                            fontWeight: '600',
+                                            color: 'var(--text-main)'
+                                        }}>
+                                            {formatProductName(item.name)}
+                                        </h3>
+                                        <p style={{
+                                            fontSize: '0.9rem',
+                                            color: 'var(--text-secondary)',
+                                            marginBottom: '1rem',
+                                            flex: 1,
+                                            lineHeight: '1.5'
+                                        }}>
+                                            {item.desc}
+                                        </p>
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{ width: '100%' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAddToOrder(item);
+                                            }}
+                                        >
+                                            Add to Order
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
-                    );
-                })}
-            </div>
+                )
             ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     <p>No items found matching your search.</p>

@@ -60,21 +60,21 @@ export default function Home() {
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
-            start: 8,
+            start: 7,
             end: 15
           },
           events: {
             onReady: (event: any) => {
-              event.target.seekTo(8, true);
+              event.target.seekTo(7, true);
               event.target.playVideo();
             },
             onStateChange: (event: any) => {
-              // Check current time and loop between 8-15 seconds
+              // Check current time and loop between 7-15 seconds
               const checkTime = () => {
                 if (player && player.getCurrentTime) {
                   const currentTime = player.getCurrentTime();
                   if (currentTime >= 15) {
-                    player.seekTo(8, true);
+                    player.seekTo(7, true);
                     player.playVideo();
                   }
                 }
@@ -86,7 +86,7 @@ export default function Home() {
                   if (player && player.getCurrentTime) {
                     const currentTime = player.getCurrentTime();
                     if (currentTime >= 15) {
-                      player.seekTo(8, true);
+                      player.seekTo(7, true);
                       player.playVideo();
                     }
                   }

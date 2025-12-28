@@ -30,9 +30,9 @@
 .heroContent {
     position: relative;
     z-index: 2;
-    text-align: center;
-    max-width: 800px;
-    margin: 0 auto;
+    text-align: left;
+    max-width: 100%;
+    margin: 0;
 }
 
 .heroTitle {
@@ -60,18 +60,16 @@
     font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    text-align: center;
+    text-align: left;
     color: var(--text-main);
 }
 
 .sectionSubtitle {
     font-size: 1.1rem;
     color: var(--text-secondary);
-    text-align: center;
+    text-align: left;
     margin-bottom: 3rem;
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 100%;
 }
 
 /* Contact Grid */
@@ -87,7 +85,7 @@
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-md);
     padding: 2.5rem 2rem;
-    text-align: center;
+    text-align: left;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
 }
@@ -186,7 +184,7 @@
 
 /* Map Section */
 .mapSection {
-    text-align: center;
+    text-align: left;
 }
 
 .mapWrapper {
@@ -205,12 +203,12 @@
 
 /* Form Section */
 .formSection {
-    text-align: center;
+    text-align: left;
 }
 
 .formWrapper {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
 }
 
 .contactForm {
@@ -333,23 +331,33 @@
 @media (max-width: 768px) {
     .heroSection {
         min-height: 30vh;
-        padding: 100px 0 60px;
+        padding: 80px 0 40px;
     }
 
     .heroTitle {
-        font-size: 3rem;
+        font-size: 2.5rem;
+        line-height: 1.2;
     }
 
     .heroSubtitle {
-        font-size: 1.1rem;
+        font-size: 1rem;
+        line-height: 1.5;
     }
 
     .section {
-        padding: 60px 0;
+        padding: 40px 0;
     }
 
     .sectionTitle {
-        font-size: 2rem;
+        font-size: 1.75rem;
+        line-height: 1.3;
+        text-align: left;
+    }
+
+    .sectionSubtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        text-align: left;
     }
 
     .contactGrid {
@@ -358,7 +366,30 @@
     }
 
     .contactCard {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem;
+        text-align: left;
+    }
+
+    .cardIcon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+
+    .cardIcon svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    .contactCard h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .address p,
+    .hours p,
+    .contactInfo p {
+        font-size: 1rem;
     }
 
     .hours p {
@@ -372,7 +403,8 @@
     }
 
     .contactInfo p {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: flex-start;
         gap: 0.5rem;
     }
 
@@ -381,11 +413,31 @@
     }
 
     .contactForm {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem;
     }
 
     .formRow {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .formGroup {
+        margin-bottom: 1rem;
+    }
+
+    .formGroup label {
+        font-size: 0.95rem;
+    }
+
+    .formGroup input,
+    .formGroup textarea {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.95rem;
+    }
+
+    .submitButton {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
     }
 
     .whatsappButton {
@@ -401,6 +453,40 @@
 
     .whatsappButton::after {
         content: 'Order';
+    }
+}
+
+@media (max-width: 480px) {
+    .heroSection {
+        padding: 60px 0 30px;
+    }
+
+    .heroTitle {
+        font-size: 2rem;
+    }
+
+    .heroSubtitle {
+        font-size: 0.95rem;
+    }
+
+    .section {
+        padding: 30px 0;
+    }
+
+    .sectionTitle {
+        font-size: 1.5rem;
+    }
+
+    .sectionSubtitle {
+        font-size: 0.95rem;
+    }
+
+    .contactCard {
+        padding: 1.25rem;
+    }
+
+    .contactForm {
+        padding: 1.25rem;
     }
 }
 

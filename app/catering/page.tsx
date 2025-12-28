@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PartyPopper, Briefcase, Heart, ChefHat, Phone, Mail } from "lucide-react";
+import { PartyPopper, Briefcase, Heart, Phone, Mail } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function Catering() {
@@ -17,6 +17,7 @@ export default function Catering() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitMessage, setSubmitMessage] = useState("");
+    const [isError, setIsError] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({
@@ -25,15 +26,66 @@ export default function Catering() {
         });
     };
 
+    // Format event details for WhatsApp
+    const formatEventForWhatsApp = () => {
+        const eventTypeLabels: Record<string, string> = {
+            party: "Party",
+            corporate: "Corporate Event",
+            wedding: "Wedding",
+            other: "Other"
+        };
+
+        const eventTypeLabel = eventTypeLabels[formData.eventType] || formData.eventType;
+
+        const message = `*Catering Inquiry from Adipoli Affairs*
+
+*Customer Details:*
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone}
+
+*Event Details:*
+Event Type: ${eventTypeLabel}
+Event Date: ${formData.eventDate}
+Guest Count: ${formData.guestCount}
+
+*Additional Information:*
+${formData.eventDetails}
+
+Thank you for your inquiry!`;
+
+        return encodeURIComponent(message);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validate required fields
+        if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || 
+            !formData.eventType || !formData.eventDate || !formData.guestCount || !formData.eventDetails.trim()) {
+            setIsError(true);
+            setSubmitMessage("Please fill in all required fields.");
+            return;
+        }
+
+        setIsError(false);
+
         setIsSubmitting(true);
         setSubmitMessage("");
 
-        // Simulate form submission (replace with actual API call)
+        // Format and send to WhatsApp
+        const whatsappNumber = '+64226340628';
+        const message = formatEventForWhatsApp();
+        const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`;
+        
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+        
+        // Clear form and show success message
         setTimeout(() => {
             setIsSubmitting(false);
-            setSubmitMessage("Thank you! We'll contact you soon to discuss your catering needs.");
+            setIsError(false);
+            setSubmitMessage("Thank you! Your inquiry has been sent. We'll contact you soon to discuss your catering needs.");
             setFormData({
                 name: "",
                 email: "",
@@ -43,7 +95,7 @@ export default function Catering() {
                 guestCount: "",
                 eventDetails: "",
             });
-        }, 1500);
+        }, 500);
     };
 
     return (
@@ -101,66 +153,6 @@ export default function Catering() {
                             comprehensive packages for ceremonies, receptions, and celebrations.
                         </p>
                     </div>
-                </div>
-            </section>
-
-            {/* Sample Menus Section */}
-            <section className={`container ${styles.section}`}>
-                <h2 className={styles.sectionTitle}>Sample Menus & Packages</h2>
-                <div className={styles.menusGrid}>
-                    <div className={styles.menuCard}>
-                        <div className={styles.menuHeader}>
-                            <ChefHat size={32} />
-                            <h3>Essential Package</h3>
-                        </div>
-                        <ul className={styles.menuList}>
-                            <li>Biryani (Chicken/Mutton/Vegetable)</li>
-                            <li>2 Curry Options</li>
-                            <li>Rice & Bread Selection</li>
-                            <li>Raita & Pickles</li>
-                            <li>Dessert</li>
-                        </ul>
-                        <p className={styles.menuNote}>Perfect for small gatherings (20-50 guests)</p>
-                    </div>
-                    <div className={styles.menuCard}>
-                        <div className={styles.menuHeader}>
-                            <ChefHat size={32} />
-                            <h3>Premium Package</h3>
-                        </div>
-                        <ul className={styles.menuList}>
-                            <li>Biryani (Multiple Options)</li>
-                            <li>4-5 Curry Options</li>
-                            <li>Appetizers & Starters</li>
-                            <li>Full Bread Selection</li>
-                            <li>Rice Varieties</li>
-                            <li>Salads & Sides</li>
-                            <li>Dessert Selection</li>
-                        </ul>
-                        <p className={styles.menuNote}>Ideal for medium events (50-100 guests)</p>
-                    </div>
-                    <div className={styles.menuCard}>
-                        <div className={styles.menuHeader}>
-                            <ChefHat size={32} />
-                            <h3>Deluxe Package</h3>
-                        </div>
-                        <ul className={styles.menuList}>
-                            <li>Full Biryani Selection</li>
-                            <li>6-8 Curry Options</li>
-                            <li>Premium Starters</li>
-                            <li>Complete Bread & Rice Menu</li>
-                            <li>Specialty Dishes</li>
-                            <li>Extensive Sides & Salads</li>
-                            <li>Premium Dessert Selection</li>
-                            <li>Beverage Options</li>
-                        </ul>
-                        <p className={styles.menuNote}>Perfect for large celebrations (100+ guests)</p>
-                    </div>
-                </div>
-                <div className={styles.customNote}>
-                    <p>
-                        <strong>All packages can be customized</strong> to suit your preferences, dietary 
-                        requirements, and budget. We work with you to create the perfect menu for your event.
-                    </p>
                 </div>
             </section>
 
@@ -294,7 +286,7 @@ export default function Catering() {
                                 />
                             </div>
                             {submitMessage && (
-                                <div className={styles.successMessage}>
+                                <div className={isError ? styles.errorMessage : styles.successMessage}>
                                     {submitMessage}
                                 </div>
                             )}
