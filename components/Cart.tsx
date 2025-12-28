@@ -317,9 +317,8 @@ Thank you for your order!`;
                                     background: 'rgba(0, 0, 0, 0.75)',
                                     zIndex: 10001,
                                     backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
-                                    msBackdropFilter: 'blur(12px)'
-                                }}
+                                    WebkitBackdropFilter: 'blur(12px)'
+                                } as React.CSSProperties}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
