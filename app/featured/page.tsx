@@ -52,10 +52,10 @@ export default function FeaturedPage() {
                             ? `$${item.price.half.toFixed(2)} / $${item.price.full.toFixed(2)}`
                             : `$${(item.price.half || item.price.full || 0).toFixed(2)}`;
                         
-                        // Get image path - use item.image if it's a valid path, otherwise construct from category/name
-                        let imagePath = item.image;
+                        // Use featuredImage if available, otherwise use regular image
+                        let imagePath = item.featuredImage || item.image;
                         
-                        // If image is empty or invalid, try to construct from category and name
+                        // If no featured image and regular image is empty or invalid, try to construct from category/name
                         if (!imagePath || imagePath === '/images/hero.png' || (!imagePath.startsWith('/') && !imagePath.startsWith('http'))) {
                             // Try to construct path from category and name (like menu page does)
                             const sanitizeName = (str: string) => {
@@ -175,6 +175,18 @@ export default function FeaturedPage() {
         }
     };
 
+    // Check if mobile device
+    const [isMobile, setIsMobile] = useState(false);
+    
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     if (items.length === 0) {
         return (
             <div className={styles.container} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -205,13 +217,15 @@ export default function FeaturedPage() {
                 >
                     <Settings size={20} />
                 </button>
-                <button
-                    className={styles.smallBtn}
-                    onClick={toggleFullScreen}
-                    title="Toggle Fullscreen"
-                >
-                    {fullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                </button>
+                {!isMobile && (
+                    <button
+                        className={styles.smallBtn}
+                        onClick={toggleFullScreen}
+                        title="Toggle Fullscreen"
+                    >
+                        {fullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                    </button>
+                )}
                 <Link href="/" className={styles.smallBtn} title="Close">
                     <X size={20} />
                 </Link>
@@ -259,77 +273,213 @@ export default function FeaturedPage() {
             {/* Main Slideshow */}
             {items.length > 0 && (
                 <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentIndex}
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8 }}
-                        className={styles.slide}
-                    >
-                    <div className={styles.imageOverlay} />
-                    {items[currentIndex]?.image && (
-                        <img
-                            src={items[currentIndex].image}
-                            alt={items[currentIndex].name}
+                    {isMobile ? (
+                        // Mobile Layout: Image on top, details card on bottom
+                        <motion.div
+                            key={`mobile-${currentIndex}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.5 }}
                             style={{
                                 position: 'absolute',
-                                top: 0,
-                                left: 0,
+                                inset: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                overflow: 'auto'
+                            }}
+                        >
+                            {/* Image Header */}
+                            <div style={{ 
+                                position: 'relative',
                                 width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                objectPosition: 'center'
-                            }}
-                            onError={(e) => {
-                                // Fallback to default image if the image fails to load
-                                const target = e.target as HTMLImageElement;
-                                const fallback = getFallbackImage(items[currentIndex]?.name);
-                                const fallbackUrl = new URL(fallback, window.location.origin).href;
-                                if (target.src !== fallbackUrl) {
-                                    console.log(`Image failed to load: ${target.src}, using fallback: ${fallback}`);
-                                    target.src = fallback;
-                                }
-                            }}
-                            onLoad={() => {
-                                console.log(`Image loaded successfully: ${items[currentIndex]?.image}`);
-                            }}
-                        />
+                                height: '40vh',
+                                minHeight: '300px',
+                                flexShrink: 0
+                            }}>
+                                {items[currentIndex]?.image && (
+                                    <img
+                                        src={items[currentIndex].image}
+                                        alt={items[currentIndex].name}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            objectPosition: 'center'
+                                        }}
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            const fallback = getFallbackImage(items[currentIndex]?.name);
+                                            const fallbackUrl = new URL(fallback, window.location.origin).href;
+                                            if (target.src !== fallbackUrl) {
+                                                target.src = fallback;
+                                            }
+                                        }}
+                                    />
+                                )}
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: '60%',
+                                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)'
+                                }} />
+                            </div>
+
+                            {/* Details Card */}
+                            <div style={{
+                                flex: 1,
+                                background: 'var(--surface)',
+                                borderRadius: '24px 24px 0 0',
+                                padding: '2rem',
+                                marginTop: '-24px',
+                                position: 'relative',
+                                zIndex: 10,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '1.5rem'
+                            }}>
+                                <div>
+                                    <div style={{ 
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        background: 'rgba(242, 127, 36, 0.2)',
+                                        padding: '0.75rem 1.5rem',
+                                        borderRadius: '50px',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                                            {items[currentIndex]?.price || ''}
+                                        </span>
+                                    </div>
+                                    <h1 style={{ 
+                                        fontSize: '2.5rem',
+                                        fontWeight: 800,
+                                        marginBottom: '1rem',
+                                        lineHeight: 1.2,
+                                        color: 'var(--text-main)'
+                                    }}>
+                                        {items[currentIndex]?.name || ''}
+                                    </h1>
+                                    <p style={{ 
+                                        fontSize: '1.1rem',
+                                        color: 'var(--text-secondary)',
+                                        lineHeight: 1.6,
+                                        marginBottom: '2rem'
+                                    }}>
+                                        {items[currentIndex]?.description || ''}
+                                    </p>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
+                                    <button className="btn btn-primary" style={{ flex: 1 }}>Order Now</button>
+                                </div>
+
+                                {/* Mobile Controls */}
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'center',
+                                    gap: '1rem',
+                                    marginTop: '1rem'
+                                }}>
+                                    <button 
+                                        className={styles.controlBtn} 
+                                        onClick={handlePrev}
+                                        style={{ width: '50px', height: '50px' }}
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+                                    <button 
+                                        className={styles.controlBtn} 
+                                        onClick={() => setIsPlaying(!isPlaying)}
+                                        style={{ width: '50px', height: '50px' }}
+                                    >
+                                        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                                    </button>
+                                    <button 
+                                        className={styles.controlBtn} 
+                                        onClick={handleNext}
+                                        style={{ width: '50px', height: '50px' }}
+                                    >
+                                        <ChevronRight size={24} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        // Desktop/TV Layout: Fullscreen
+                        <motion.div
+                            key={`desktop-${currentIndex}`}
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className={styles.slide}
+                        >
+                            <div className={styles.imageOverlay} />
+                            {items[currentIndex]?.image && (
+                                <img
+                                    src={items[currentIndex].image}
+                                    alt={items[currentIndex].name}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        objectPosition: 'center'
+                                    }}
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        const fallback = getFallbackImage(items[currentIndex]?.name);
+                                        const fallbackUrl = new URL(fallback, window.location.origin).href;
+                                        if (target.src !== fallbackUrl) {
+                                            console.log(`Image failed to load: ${target.src}, using fallback: ${fallback}`);
+                                            target.src = fallback;
+                                        }
+                                    }}
+                                    onLoad={() => {
+                                        console.log(`Image loaded successfully: ${items[currentIndex]?.image}`);
+                                    }}
+                                />
+                            )}
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 50 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3, duration: 0.6 }}
+                                className={styles.content}
+                            >
+                                <div className={styles.info}>
+                                    <div className={styles.priceTag}>
+                                        <span className={styles.price}>{items[currentIndex]?.price || ''}</span>
+                                    </div>
+                                    <h1 className={styles.title}>{items[currentIndex]?.name || ''}</h1>
+                                    <p className={styles.description}>{items[currentIndex]?.description || ''}</p>
+
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <button className="btn btn-primary">Order Now</button>
+                                    </div>
+                                </div>
+
+                                <div className={styles.controls}>
+                                    <button className={styles.controlBtn} onClick={handlePrev}>
+                                        <ChevronLeft size={32} />
+                                    </button>
+                                    <button className={styles.controlBtn} onClick={() => setIsPlaying(!isPlaying)}>
+                                        {isPlaying ? <Pause size={32} /> : <Play size={32} />}
+                                    </button>
+                                    <button className={styles.controlBtn} onClick={handleNext}>
+                                        <ChevronRight size={32} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
                     )}
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.6 }}
-                        className={styles.content}
-                    >
-                        <div className={styles.info}>
-                            <div className={styles.priceTag}>
-                                <span className={styles.price}>{items[currentIndex]?.price || ''}</span>
-                            </div>
-                            <h1 className={styles.title}>{items[currentIndex]?.name || ''}</h1>
-                            <p className={styles.description}>{items[currentIndex]?.description || ''}</p>
-
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button className="btn btn-primary">Order Now</button>
-                                <button className="btn btn-outline" style={{ color: 'white', borderColor: 'white' }}>View Details</button>
-                            </div>
-                        </div>
-
-                        <div className={styles.controls}>
-                            <button className={styles.controlBtn} onClick={handlePrev}>
-                                <ChevronLeft size={32} />
-                            </button>
-                            <button className={styles.controlBtn} onClick={() => setIsPlaying(!isPlaying)}>
-                                {isPlaying ? <Pause size={32} /> : <Play size={32} />}
-                            </button>
-                            <button className={styles.controlBtn} onClick={handleNext}>
-                                <ChevronRight size={32} />
-                            </button>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </AnimatePresence>
+                </AnimatePresence>
             )}
         </div>
     );

@@ -60,7 +60,12 @@ export default function Footer() {
 
             <div className={styles.bottomBar}>
                 <div className="container">
-                    <p>&copy; {new Date().getFullYear()} Adipoli Affairs. All rights reserved.</p>
+                    <div className={styles.bottomBarContent}>
+                        <p>&copy; {new Date().getFullYear()} Adipoli Affairs. All rights reserved.</p>
+                        <p className={styles.bconCredit}>
+                            Built with ❤️ at <a href="https://bcon.club" target="_blank" rel="noopener noreferrer">BCON Club</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </footer>

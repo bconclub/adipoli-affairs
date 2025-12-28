@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { X, Plus, Minus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatProductName } from '@/lib/utils';
+import { useState } from 'react';
 import styles from './Cart.module.css';
 
 // Sanitize name for file path (same as menu page)
@@ -66,12 +67,70 @@ const getImagePathFromPublic = (name: string, currentImage: string): string => {
 
 export default function Cart() {
     const { items, isOpen, closeCart, updateQuantity, removeItem, getTotal, clearCart, cancelAutoClose } = useCart();
+    const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
 
     const total = getTotal();
+    const tax = total * 0.15;
+    const finalTotal = total + tax;
 
     // Cancel auto-close when user interacts with cart
     const handleCartInteraction = () => {
         cancelAutoClose();
+    };
+
+    // Format order details for WhatsApp
+    const formatOrderForWhatsApp = (name: string, phone: string) => {
+        const orderItems = items.map(item => {
+            return `• ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`;
+        }).join('\n');
+
+        const message = `🍽️ *New Order from Adipoli Affairs*
+
+*Customer Details:*
+Name: ${name}
+Phone: ${phone}
+
+*Order Details:*
+${orderItems}
+
+*Pricing:*
+Subtotal: $${total.toFixed(2)}
+Tax (15%): $${tax.toFixed(2)}
+*Total: $${finalTotal.toFixed(2)}*
+
+Thank you for your order! 🙏`;
+
+        return encodeURIComponent(message);
+    };
+
+    // Handle checkout
+    const handleCheckout = () => {
+        if (items.length === 0) return;
+        setShowCheckoutForm(true);
+    };
+
+    // Submit order to WhatsApp
+    const submitOrderToWhatsApp = () => {
+        if (!customerName.trim() || !customerPhone.trim()) {
+            alert('Please fill in both name and phone number');
+            return;
+        }
+
+        const whatsappNumber = '+64226340628';
+        const message = formatOrderForWhatsApp(customerName.trim(), customerPhone.trim());
+        const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`;
+        
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+        
+        // Clear form and cart
+        setCustomerName('');
+        setCustomerPhone('');
+        setShowCheckoutForm(false);
+        clearCart();
+        closeCart();
     };
 
     return (
@@ -216,15 +275,15 @@ export default function Cart() {
                                         }}>
                                             Clear Order
                                         </button>
-                                        <button className="btn btn-primary" onClick={handleCartInteraction}>
-                                            Proceed to Checkout
+                                        <button className="btn btn-primary" onClick={handleCheckout}>
+                                            Order on WhatsApp
                                         </button>
                                     </div>
                                 </>
                             ) : (
                                 <div className={styles.actionButtons}>
                                     <button className="btn btn-primary" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                                        Proceed to Checkout
+                                        Order on WhatsApp
                                     </button>
                                 </div>
                             )}
@@ -232,6 +291,142 @@ export default function Cart() {
                     </motion.div>
                 </>
             )}
+
+            {/* Checkout Form Modal */}
+            <AnimatePresence>
+                {showCheckoutForm && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                zIndex: 3000,
+                                backdropFilter: 'blur(4px)'
+                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowCheckoutForm(false)}
+                        />
+
+                        {/* Form Modal */}
+                        <motion.div
+                            style={{
+                                position: 'fixed',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                background: 'var(--surface)',
+                                borderRadius: '16px',
+                                padding: '2rem',
+                                maxWidth: '500px',
+                                width: '90%',
+                                zIndex: 3001,
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+                            }}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem' }}>Order Details</h2>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                    Please provide your details to complete your order
+                                </p>
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ 
+                                    display: 'block', 
+                                    marginBottom: '0.5rem', 
+                                    fontWeight: '500',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    Full Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    placeholder="Enter your full name"
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        color: 'white',
+                                        fontSize: '1rem'
+                                    }}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ 
+                                    display: 'block', 
+                                    marginBottom: '0.5rem', 
+                                    fontWeight: '500',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    Phone Number *
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={customerPhone}
+                                    onChange={(e) => setCustomerPhone(e.target.value)}
+                                    placeholder="e.g., +64 21 123 4567"
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        color: 'white',
+                                        fontSize: '1rem'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '1rem',
+                                justifyContent: 'flex-end'
+                            }}>
+                                <button
+                                    className="btn btn-outline"
+                                    onClick={() => {
+                                        setShowCheckoutForm(false);
+                                        setCustomerName('');
+                                        setCustomerPhone('');
+                                    }}
+                                    style={{ padding: '0.75rem 1.5rem' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={submitOrderToWhatsApp}
+                                    disabled={!customerName.trim() || !customerPhone.trim()}
+                                    style={{ 
+                                        padding: '0.75rem 1.5rem',
+                                        opacity: (!customerName.trim() || !customerPhone.trim()) ? 0.5 : 1,
+                                        cursor: (!customerName.trim() || !customerPhone.trim()) ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    Send to WhatsApp
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </AnimatePresence>
     );
 }

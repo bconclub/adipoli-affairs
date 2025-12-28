@@ -227,51 +227,6 @@ export default function MenuPage() {
         };
     }, []);
 
-    const filteredItems = menuItems
-        .filter(item => {
-            let matchesCategory = false;
-            if (activeCategory === "All" && selectedCategories.length === 0) {
-                matchesCategory = true;
-            } else if (activeCategory !== "All") {
-                matchesCategory = item.category === activeCategory;
-            } else if (selectedCategories.length > 0) {
-                matchesCategory = selectedCategories.includes(item.category);
-            }
-            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesCategory && matchesSearch;
-        })
-        .sort((a, b) => {
-            // Sort by price (low to high) when a category is selected
-            if (activeCategory !== "All" || selectedCategories.length > 0) {
-                const priceA = getPriceValue(a.price);
-                const priceB = getPriceValue(b.price);
-                return priceA - priceB;
-            }
-            // Keep original order when "All" is selected
-            return 0;
-        });
-
-    const handleCategoryToggle = (category: string) => {
-        if (category === "All") return;
-        setSelectedCategories(prev => {
-            if (prev.includes(category)) {
-                return prev.filter(c => c !== category);
-            } else {
-                return [...prev, category];
-            }
-        });
-        setActiveCategory("All");
-    };
-
-    const handleFilterApply = () => {
-        setShowFilterModal(false);
-    };
-
-    const handleClearFilters = () => {
-        setSelectedCategories([]);
-        setActiveCategory("All");
-    };
-
     const formatPrice = (price: number | { half?: number; full?: number }): string => {
         if (typeof price === 'number') {
             return `$${price.toFixed(2)}`;
@@ -296,6 +251,51 @@ export default function MenuPage() {
         return price.full || price.half || 0;
     };
 
+    const handleCategoryToggle = (category: string) => {
+        if (category === "All") return;
+        setSelectedCategories(prev => {
+            if (prev.includes(category)) {
+                return prev.filter(c => c !== category);
+            } else {
+                return [...prev, category];
+            }
+        });
+        setActiveCategory("All");
+    };
+
+    const handleFilterApply = () => {
+        setShowFilterModal(false);
+    };
+
+    const handleClearFilters = () => {
+        setSelectedCategories([]);
+        setActiveCategory("All");
+    };
+
+    const filteredItems = menuItems
+        .filter(item => {
+            let matchesCategory = false;
+            if (activeCategory === "All" && selectedCategories.length === 0) {
+                matchesCategory = true;
+            } else if (activeCategory !== "All") {
+                matchesCategory = item.category === activeCategory;
+            } else if (selectedCategories.length > 0) {
+                matchesCategory = selectedCategories.includes(item.category);
+            }
+            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        })
+        .sort((a, b) => {
+            // Sort by price (low to high) when a category is selected
+            if (activeCategory !== "All" || selectedCategories.length > 0) {
+                const priceA = getPriceValue(a.price);
+                const priceB = getPriceValue(b.price);
+                return priceA - priceB;
+            }
+            // Keep original order when "All" is selected
+            return 0;
+        });
+
 
     const handleAddToOrder = (item: MenuItem) => {
         const price = getPriceValue(item.price);
@@ -318,7 +318,7 @@ export default function MenuPage() {
 
             {/* Controls */}
             <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem' }}>
-                {/* Category Buttons - Horizontal Scrolling */}
+                {/* Row 1: Category Buttons Only */}
                 <div 
                     style={{ 
                         display: 'flex', 
@@ -356,6 +356,11 @@ export default function MenuPage() {
                             {cat}
                         </button>
                     ))}
+                </div>
+
+                {/* Row 2: Filter and Search Bar */}
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'nowrap' }}>
+                    {/* Filter Button */}
                     <button
                         onClick={() => setShowFilterModal(true)}
                         className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
@@ -363,7 +368,7 @@ export default function MenuPage() {
                             borderRadius: '50px', 
                             whiteSpace: 'nowrap', 
                             fontSize: '0.9rem', 
-                            padding: '0.5rem 1.25rem',
+                            padding: '0.5rem 1rem',
                             flexShrink: 0,
                             display: 'flex',
                             alignItems: 'center',
@@ -371,7 +376,7 @@ export default function MenuPage() {
                         }}
                     >
                         <Filter size={16} />
-                        Filter
+                        <span style={{ display: 'inline' }}>Filter</span>
                         {selectedCategories.length > 0 && (
                             <span style={{
                                 background: 'rgba(255,255,255,0.2)',
@@ -388,26 +393,27 @@ export default function MenuPage() {
                             </span>
                         )}
                     </button>
-                </div>
 
-                {/* Search Bar */}
-                <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                    <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
-                    <input
-                        type="text"
-                        placeholder="Search dishes..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%', 
-                            padding: '0.75rem 1rem 0.75rem 3rem', 
-                            borderRadius: '50px',
-                            background: 'rgba(255,255,255,0.05)', 
-                            border: '1px solid rgba(255,255,255,0.1)', 
-                            color: 'white',
-                            fontSize: '0.95rem'
-                        }}
-                    />
+                    {/* Search Bar */}
+                    <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search dishes..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%', 
+                                padding: '0.75rem 1rem 0.75rem 3rem', 
+                                borderRadius: '50px',
+                                background: 'rgba(255,255,255,0.05)', 
+                                border: '1px solid rgba(255,255,255,0.1)', 
+                                color: 'white',
+                                fontSize: '0.95rem',
+                                minWidth: 0
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -497,6 +503,7 @@ export default function MenuPage() {
 
                         {/* Modal */}
                         <motion.div
+                            className="filter-modal"
                             style={{
                                 position: 'fixed',
                                 top: '50%',
@@ -511,7 +518,8 @@ export default function MenuPage() {
                                 overflowY: 'auto',
                                 zIndex: 1001,
                                 border: '1px solid var(--glass-border)',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                margin: 0
                             }}
                             initial={{ opacity: 0, scale: 0.9, y: -20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}

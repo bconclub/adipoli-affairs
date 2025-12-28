@@ -73,6 +73,36 @@ const getImageForItem = (name: string): string => {
     return "/images/hero.png";
 };
 
+// Sanitize name for file path (same as menu page)
+const sanitizeName = (name: string | undefined | null): string => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+};
+
+// Get image path from public folder based on product name and category
+const getImagePathFromPublic = (name: string | undefined | null, category: string | undefined | null): string => {
+    if (!name || !category) return '/images/hero.png';
+    const sanitizedCategory = sanitizeName(category);
+    const sanitizedProductName = sanitizeName(name);
+    
+    if (!sanitizedCategory || !sanitizedProductName) return '/images/hero.png';
+    
+    return `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
+};
+
+// Fallback image based on item name
+const getFallbackImage = (name: string | undefined | null): string => {
+    if (!name) return '/images/hero.png';
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('chicken')) return "/images/chicken.png";
+    if (lowerName.includes('beef')) return "/images/beef.png";
+    if (lowerName.includes('biryani')) return "/images/biryani.png";
+    return "/images/hero.png";
+};
+
 // Helper function to generate description
 const getDescription = (item: { name: string; description?: string }): string => {
     if (item.description) return item.description;
@@ -129,6 +159,7 @@ export default function AdminPanel() {
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [featuredSearchQuery, setFeaturedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
     useEffect(() => {
@@ -234,6 +265,21 @@ export default function AdminPanel() {
                 </button>
             </div>
 
+            {/* Add/Edit Form - Show on both tabs */}
+            {(isAddingNew || editingItem) && (
+                <div id="menu-item-form" style={{ position: 'relative', zIndex: 10, marginBottom: '2rem' }}>
+                    <MenuItemForm
+                        item={editingItem || undefined}
+                        categories={CATEGORIES}
+                        onSave={handleSaveMenuItem}
+                        onCancel={() => {
+                            setEditingItem(null);
+                            setIsAddingNew(false);
+                        }}
+                    />
+                </div>
+            )}
+
             {/* Menu Items Tab */}
             {activeTab === 'menu' && (
                 <div>
@@ -296,21 +342,6 @@ export default function AdminPanel() {
                         </div>
                     </div>
 
-                    {/* Add/Edit Form */}
-                    {(isAddingNew || editingItem) && (
-                        <div id="menu-item-form" style={{ position: 'relative', zIndex: 10 }}>
-                            <MenuItemForm
-                                item={editingItem || undefined}
-                                categories={CATEGORIES}
-                                onSave={handleSaveMenuItem}
-                                onCancel={() => {
-                                    setEditingItem(null);
-                                    setIsAddingNew(false);
-                                }}
-                            />
-                        </div>
-                    )}
-
                     {/* Menu Items List */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
                         {filteredMenuItems.map(item => (
@@ -366,57 +397,258 @@ export default function AdminPanel() {
                     <div className="glass" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                             <div>
-                                <h2>Featured Items</h2>
+                                <h2>All Products</h2>
                                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
-                                    Items marked with a star will appear on the featured page. Click on any item to edit it.
+                                    Toggle the star to make items featured. Click Edit to change the product image.
                                 </p>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Featured Items List */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                        {menuItems
-                            .filter(item => item.featured === true)
-                            .map(item => (
-                                <MenuItemCard
-                                    key={item.id}
-                                    item={item}
-                                    onEdit={() => setEditingItem(item)}
-                                    onDelete={() => handleDeleteMenuItem(item.id)}
-                                    onToggleFeatured={async (e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                            const currentFeatured = item.featured || false;
-                                            const newFeaturedStatus = !currentFeatured;
-                                            console.log(`Toggling featured for item ${item.id} (${item.name}) from ${currentFeatured} to ${newFeaturedStatus}`);
-                                            const updated = await updateMenuItem(item.id, { featured: newFeaturedStatus });
-                                            if (updated) {
-                                                console.log('Update successful, reloading data...');
-                                                await loadData();
-                                            } else {
-                                                console.error('Update returned null');
-                                                alert('Failed to update featured status. Please try again.');
-                                            }
-                                        } catch (error) {
-                                            console.error('Error toggling featured status:', error);
-                                            alert('Failed to update featured status. Please try again.');
-                                        }
-                                    }}
-                                />
-                            ))}
-                    </div>
-
-                    {menuItems.filter(item => item.featured === true).length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                            <Star size={48} style={{ marginBottom: '1rem', opacity: 0.3, display: 'block', margin: '0 auto 1rem' }} />
-                            <p>No featured items yet.</p>
-                            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                                Go to the Menu Items tab and use the star button to mark items as featured.
-                            </p>
+                        
+                        {/* Search Bar */}
+                        <div style={{ position: 'relative', marginTop: '1rem' }}>
+                            <input
+                                type="text"
+                                placeholder="Search products..."
+                                value={featuredSearchQuery}
+                                onChange={(e) => setFeaturedSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '8px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'white',
+                                    fontSize: '1rem',
+                                    paddingLeft: '2.5rem'
+                                }}
+                            />
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                style={{
+                                    position: 'absolute',
+                                    left: '0.75rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: 'var(--text-secondary)',
+                                    pointerEvents: 'none'
+                                }}
+                            >
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Featured Items Preview Cards */}
+                    {(() => {
+                        const featuredItems = menuItems.filter(item => item.featured === true);
+                        if (featuredItems.length > 0) {
+                            return (
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', color: 'var(--text-secondary)' }}>
+                                        Featured Items ({featuredItems.length})
+                                    </h3>
+                                    <div style={{ 
+                                        display: 'grid', 
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                                        gap: '1rem',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        {featuredItems.map(item => {
+                                            // Use the same image path logic as menu page
+                                            const imagePath = item.image?.startsWith('data:image/') 
+                                                ? item.image 
+                                                : (item.image || getImagePathFromPublic(item.name, item.category) || '/images/hero.png');
+                                            
+                                            return (
+                                                <div 
+                                                    key={item.id} 
+                                                    className="glass-card" 
+                                                    style={{ 
+                                                        overflow: 'hidden', 
+                                                        display: 'flex', 
+                                                        flexDirection: 'column',
+                                                        cursor: 'pointer',
+                                                        transition: 'transform 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                    }}
+                                                    onClick={() => setEditingItem(item)}
+                                                >
+                                                    <div style={{ 
+                                                        position: 'relative', 
+                                                        width: '100%', 
+                                                        aspectRatio: '16/9',
+                                                        overflow: 'hidden',
+                                                        backgroundColor: 'rgba(0,0,0,0.2)'
+                                                    }}>
+                                                        <img 
+                                                            src={imagePath} 
+                                                            alt={item.name} 
+                                                            style={{ 
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover',
+                                                                objectPosition: 'center center'
+                                                            }}
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                const fallback = getFallbackImage(item.name);
+                                                                if (!target.src.startsWith('data:image/') && target.src !== new URL(fallback, window.location.origin).href) {
+                                                                    target.src = fallback;
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ padding: '0.75rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                        <h4 style={{ 
+                                                            fontSize: '0.85rem', 
+                                                            lineHeight: '1.2', 
+                                                            marginBottom: '0.25rem',
+                                                            textTransform: 'none',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: 'vertical'
+                                                        }}>
+                                                            {formatProductName(item.name)}
+                                                        </h4>
+                                                        <span className="text-primary" style={{ 
+                                                            fontWeight: 'bold', 
+                                                            fontSize: '0.75rem',
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {typeof item.price === 'number' 
+                                                                ? `$${item.price.toFixed(2)}`
+                                                                : item.price.half && item.price.full
+                                                                ? `$${item.price.half.toFixed(2)} / $${item.price.full.toFixed(2)}`
+                                                                : `$${(item.price.half || item.price.full || 0).toFixed(2)}`}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
+
+                    {/* Simple Product List */}
+                    <div className="glass" style={{ padding: '0', borderRadius: '16px', overflow: 'hidden' }}>
+                        {(() => {
+                            const filteredItems = menuItems.filter(item => 
+                                item.name.toLowerCase().includes(featuredSearchQuery.toLowerCase()) ||
+                                item.category.toLowerCase().includes(featuredSearchQuery.toLowerCase())
+                            );
+                            
+                            if (filteredItems.length === 0) {
+                                return (
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                                        <p>No products found matching "{featuredSearchQuery}"</p>
+                                    </div>
+                                );
+                            }
+                            
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {filteredItems.map((item, index) => (
+                                    <div
+                                        key={item.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '1rem 1.5rem',
+                                            borderBottom: index < menuItems.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                                            transition: 'background 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'transparent';
+                                        }}
+                                    >
+                                        {/* Product Name - Left */}
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
+                                                {formatProductName(item.name)}
+                                            </h3>
+                                            {item.featured === true && (
+                                                <Star size={16} style={{ color: 'var(--primary)' }} fill="var(--primary)" />
+                                            )}
+                                        </div>
+
+                                        {/* Actions - Right */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            {/* Edit Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingItem(item)}
+                                                className="btn btn-outline"
+                                                style={{
+                                                    padding: '0.5rem 1rem',
+                                                    fontSize: '0.9rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem'
+                                                }}
+                                            >
+                                                <Edit2 size={16} />
+                                                Edit
+                                            </button>
+
+                                            {/* Featured Toggle */}
+                                            <button
+                                                type="button"
+                                                onClick={async (e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    try {
+                                                        const currentFeatured = item.featured || false;
+                                                        const newFeaturedStatus = !currentFeatured;
+                                                        const updated = await updateMenuItem(item.id, { featured: newFeaturedStatus });
+                                                        if (updated) {
+                                                            await loadData();
+                                                        } else {
+                                                            alert('Failed to update featured status. Please try again.');
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Error toggling featured status:', error);
+                                                        alert('Failed to update featured status. Please try again.');
+                                                    }
+                                                }}
+                                                className="btn btn-outline"
+                                                style={{
+                                                    padding: '0.5rem',
+                                                    color: item.featured === true ? 'var(--primary)' : 'var(--text-secondary)',
+                                                    borderColor: item.featured === true ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+                                                    background: item.featured === true ? 'rgba(242, 127, 36, 0.1)' : 'transparent',
+                                                    minWidth: 'auto'
+                                                }}
+                                                title={item.featured === true ? 'Remove from featured' : 'Add to featured'}
+                                            >
+                                                <Star size={16} fill={item.featured === true ? 'var(--primary)' : 'none'} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                    </div>
                 </div>
             )}
         </div>
@@ -501,11 +733,16 @@ function MenuItemForm({
         priceHalf: typeof item?.price === 'object' ? item.price.half : undefined,
         priceFull: typeof item?.price === 'object' ? item.price.full : undefined,
         featured: item?.featured || false,
+        featuredImage: item?.featuredImage || '',
     });
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
     const [showCropper, setShowCropper] = useState(false);
+    const [showFeaturedCropper, setShowFeaturedCropper] = useState(false);
     const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [featuredImageToCrop, setFeaturedImageToCrop] = useState<string | null>(null);
     const [originalFile, setOriginalFile] = useState<File | null>(null);
+    const [originalFeaturedFile, setOriginalFeaturedFile] = useState<File | null>(null);
 
     // Update form data when item prop changes
     useEffect(() => {
@@ -520,6 +757,7 @@ function MenuItemForm({
                 priceHalf: typeof item.price === 'object' ? item.price.half : undefined,
                 priceFull: typeof item.price === 'object' ? item.price.full : undefined,
                 featured: item.featured || false,
+                featuredImage: item.featuredImage || '',
             });
         } else {
             setFormData({
@@ -532,6 +770,7 @@ function MenuItemForm({
                 priceHalf: undefined,
                 priceFull: undefined,
                 featured: false,
+                featuredImage: '',
             });
         }
     }, [item, categories]);
@@ -585,6 +824,7 @@ function MenuItemForm({
             desc: formData.desc,
             price: priceData as number | { half: number; full: number },
             featured: formData.featured,
+            featuredImage: formData.featuredImage || undefined,
         });
     };
 
@@ -886,6 +1126,152 @@ function MenuItemForm({
                     />
                     <label htmlFor="featured-check" style={{ cursor: 'pointer' }}>Featured Item</label>
                 </div>
+
+                {/* Featured Image Upload - Always show for editing */}
+                <div style={{ gridColumn: '1 / -1', marginTop: '1.5rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                        Featured Image (for TV/Display) 
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: '0.5rem' }}>
+                            Optional - only used if item is featured, defaults to product image
+                        </span>
+                    </label>
+                        
+                        {/* Featured Image Preview */}
+                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                            <div style={{ 
+                                position: 'relative', 
+                                width: '200px', 
+                                height: '150px', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                flexShrink: 0
+                            }}>
+                                {formData.featuredImage ? (
+                                    <>
+                                        <img 
+                                            src={formData.featuredImage.startsWith('/') ? formData.featuredImage : `/${formData.featuredImage}`}
+                                            alt="Featured Preview" 
+                                            style={{ 
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                if (!target.src.endsWith('/images/hero.png')) {
+                                                    target.src = formData.image || '/images/hero.png';
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, featuredImage: '' })}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '0.5rem',
+                                                right: '0.5rem',
+                                                background: 'rgba(239, 68, 68, 0.9)',
+                                                border: 'none',
+                                                borderRadius: '50%',
+                                                width: '32px',
+                                                height: '32px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                color: 'white',
+                                                transition: 'all 0.2s',
+                                                zIndex: 10
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 1)';
+                                                e.currentTarget.style.transform = 'scale(1.1)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+                                                e.currentTarget.style.transform = 'scale(1)';
+                                            }}
+                                            title="Remove featured image"
+                                        >
+                                            <XCircle size={18} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        height: '100%',
+                                        color: 'var(--text-secondary)',
+                                        flexDirection: 'column',
+                                        gap: '0.5rem',
+                                        padding: '1rem',
+                                        textAlign: 'center',
+                                        fontSize: '0.85rem'
+                                    }}>
+                                        <ImageIcon size={32} />
+                                        <span>Will use product image</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        value={formData.featuredImage}
+                                        onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
+                                        placeholder="/images/featured/item.png (optional)"
+                                        style={{ 
+                                            flex: 1,
+                                            padding: '0.75rem', 
+                                            borderRadius: '8px', 
+                                            background: 'rgba(255,255,255,0.05)', 
+                                            border: '1px solid rgba(255,255,255,0.1)', 
+                                            color: 'white'
+                                        }}
+                                    />
+                                    <label className="btn btn-outline" style={{ cursor: isUploadingFeatured ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isUploadingFeatured ? 0.6 : 1 }}>
+                                        {isUploadingFeatured ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={18} />
+                                                Choose File
+                                            </>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            disabled={isUploadingFeatured}
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    // Read file as data URL for cropping
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => {
+                                                        setFeaturedImageToCrop(reader.result as string);
+                                                        setOriginalFeaturedFile(file);
+                                                        setShowFeaturedCropper(true);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                                    Upload a high-quality image optimized for TV/display boards (16:9 aspect ratio recommended). If not set, the product image will be used.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
             </div>
 
             <div>
@@ -923,11 +1309,24 @@ function MenuItemForm({
                 <ImageCropper
                     image={imageToCrop}
                     aspectRatio={IMAGE_DIMENSIONS.aspectRatio}
-                    onCropComplete={handleCropComplete}
+                    onCropComplete={(cropped) => handleCropComplete(cropped, false)}
                     onCancel={() => {
                         setShowCropper(false);
                         setImageToCrop(null);
                         setOriginalFile(null);
+                    }}
+                />
+            )}
+            
+            {showFeaturedCropper && featuredImageToCrop && (
+                <ImageCropper
+                    image={featuredImageToCrop}
+                    aspectRatio={IMAGE_DIMENSIONS.aspectRatio}
+                    onCropComplete={(cropped) => handleCropComplete(cropped, true)}
+                    onCancel={() => {
+                        setShowFeaturedCropper(false);
+                        setFeaturedImageToCrop(null);
+                        setOriginalFeaturedFile(null);
                     }}
                 />
             )}

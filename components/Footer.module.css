@@ -86,7 +86,40 @@
     background: var(--background);
     padding: 1.5rem 0;
     border-top: 1px solid var(--surface-hover);
-    text-align: center;
     color: var(--text-muted);
     font-size: 0.9rem;
+}
+
+.bottomBarContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    text-align: center;
+}
+
+.bconCredit {
+    margin: 0;
+}
+
+.bconCredit a {
+    color: var(--text-muted);
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.bconCredit a:hover {
+    color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .bottomBarContent {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .bconCredit {
+        margin-top: 0.5rem;
+    }
 }

@@ -8,6 +8,7 @@ export interface MenuItem {
     image: string;
     desc: string;
     featured?: boolean;
+    featuredImage?: string; // Optional featured image for TV/display boards
 }
 
 export interface FeaturedItem {
