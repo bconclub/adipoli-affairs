@@ -12,7 +12,7 @@ export default function ConditionalLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isTVPage = pathname === "/tv";
+  const isTVPage = pathname === "/tv" || pathname === "/tv/";
 
   if (isTVPage) {
     return <>{children}</>;
