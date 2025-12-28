@@ -161,6 +161,8 @@ export default function AdminPanel() {
     const [searchQuery, setSearchQuery] = useState('');
     const [featuredSearchQuery, setFeaturedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [draggedItem, setDraggedItem] = useState<number | null>(null);
+    const [draggedOver, setDraggedOver] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -447,6 +449,50 @@ export default function AdminPanel() {
                     {/* Featured Items Preview Cards */}
                     {(() => {
                         const featuredItems = menuItems.filter(item => item.featured === true);
+                        
+                        const handleDragStart = (e: React.DragEvent, itemId: number) => {
+                            setDraggedItem(itemId);
+                            e.dataTransfer.effectAllowed = 'move';
+                        };
+                        
+                        const handleDragOver = (e: React.DragEvent, itemId: number) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            setDraggedOver(itemId);
+                        };
+                        
+                        const handleDragEnd = () => {
+                            setDraggedItem(null);
+                            setDraggedOver(null);
+                        };
+                        
+                        const handleDrop = async (e: React.DragEvent, targetId: number) => {
+                            e.preventDefault();
+                            if (draggedItem === null || draggedItem === targetId) {
+                                setDraggedItem(null);
+                                setDraggedOver(null);
+                                return;
+                            }
+                            
+                            const draggedIndex = featuredItems.findIndex(item => item.id === draggedItem);
+                            const targetIndex = featuredItems.findIndex(item => item.id === targetId);
+                            
+                            if (draggedIndex === -1 || targetIndex === -1) {
+                                setDraggedItem(null);
+                                setDraggedOver(null);
+                                return;
+                            }
+                            
+                            // Reorder items (for now, we'll just update the order in the array)
+                            // Note: This doesn't persist to the database yet, but provides visual feedback
+                            const newOrder = [...featuredItems];
+                            const [removed] = newOrder.splice(draggedIndex, 1);
+                            newOrder.splice(targetIndex, 0, removed);
+                            
+                            setDraggedItem(null);
+                            setDraggedOver(null);
+                        };
+                        
                         if (featuredItems.length > 0) {
                             return (
                                 <div style={{ marginBottom: '2rem' }}>
@@ -460,30 +506,104 @@ export default function AdminPanel() {
                                         marginBottom: '1rem'
                                     }}>
                                         {featuredItems.map(item => {
-                                            // Use the same image path logic as menu page
-                                            const imagePath = item.image?.startsWith('data:image/') 
-                                                ? item.image 
-                                                : (item.image || getImagePathFromPublic(item.name, item.category) || '/images/hero.png');
+                                            // Use featuredImage if available, otherwise use regular image
+                                            let imagePath = item.featuredImage || item.image;
+                                            
+                                            // If image is a base64 data URL, use it directly
+                                            if (imagePath && imagePath.startsWith('data:image/')) {
+                                                // Keep as is
+                                            }
+                                            // If no image or invalid path, try to construct from category and name
+                                            else if (!imagePath || imagePath === '/images/hero.png' || (!imagePath.startsWith('/') && !imagePath.startsWith('http'))) {
+                                                imagePath = getImagePathFromPublic(item.name, item.category) || '/images/hero.png';
+                                            }
+                                            // Ensure it starts with / if it's a relative path
+                                            else if (imagePath && !imagePath.startsWith('/') && !imagePath.startsWith('http') && !imagePath.startsWith('data:image/')) {
+                                                imagePath = `/${imagePath}`;
+                                            }
                                             
                                             return (
                                                 <div 
                                                     key={item.id} 
                                                     className="glass-card" 
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, item.id)}
+                                                    onDragOver={(e) => handleDragOver(e, item.id)}
+                                                    onDragEnd={handleDragEnd}
+                                                    onDrop={(e) => handleDrop(e, item.id)}
                                                     style={{ 
                                                         overflow: 'hidden', 
                                                         display: 'flex', 
                                                         flexDirection: 'column',
-                                                        cursor: 'pointer',
-                                                        transition: 'transform 0.2s'
+                                                        cursor: 'move',
+                                                        transition: 'transform 0.2s',
+                                                        position: 'relative',
+                                                        opacity: draggedItem === item.id ? 0.5 : 1,
+                                                        border: draggedOver === item.id ? '2px solid var(--primary)' : 'none'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                                        if (draggedItem === null) {
+                                                            e.currentTarget.style.transform = 'translateY(-4px)';
+                                                        }
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.transform = 'translateY(0)';
                                                     }}
-                                                    onClick={() => setEditingItem(item)}
+                                                    onClick={(e) => {
+                                                        // Don't open edit if clicking the close button
+                                                        if ((e.target as HTMLElement).closest('.remove-featured-btn')) {
+                                                            return;
+                                                        }
+                                                        setEditingItem(item);
+                                                    }}
                                                 >
+                                                    {/* Close Button */}
+                                                    <button
+                                                        className="remove-featured-btn"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                const updated = await updateMenuItem(item.id, { featured: false });
+                                                                if (updated) {
+                                                                    await loadData();
+                                                                } else {
+                                                                    alert('Failed to remove from featured. Please try again.');
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Error removing from featured:', error);
+                                                                alert('Failed to remove from featured. Please try again.');
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: '0.5rem',
+                                                            right: '0.5rem',
+                                                            background: 'rgba(239, 68, 68, 0.9)',
+                                                            border: 'none',
+                                                            borderRadius: '50%',
+                                                            width: '24px',
+                                                            height: '24px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: 'white',
+                                                            zIndex: 10,
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 1)';
+                                                            e.currentTarget.style.transform = 'scale(1.1)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                        title="Remove from featured"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                    
                                                     <div style={{ 
                                                         position: 'relative', 
                                                         width: '100%', 
