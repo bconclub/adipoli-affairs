@@ -117,10 +117,10 @@ const getImageForItem = (name: string | undefined | null, category: string | und
     return publicPath;
 };
 
-// Helper function to generate description
-const getDescription = (name: string | undefined | null): string => {
-    if (!name) return 'Delicious dish prepared with authentic Kerala spices and traditional cooking methods.';
-    return `Delicious ${name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
+// Helper function to generate description (same as admin panel)
+const getDescription = (item: { name: string; description?: string }): string => {
+    if (item.description) return item.description;
+    return `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`;
 };
 
 // Transform menu data to MenuItem format
@@ -140,7 +140,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 16.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 items.push({
                     id: id++,
@@ -148,7 +148,7 @@ const transformMenuData = (): MenuItem[] => {
                     price: 29.99,
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
-                    desc: getDescription(item.name),
+                    desc: getDescription(item),
                 });
                 return;
             }
@@ -159,7 +159,7 @@ const transformMenuData = (): MenuItem[] => {
                 price: item.price,
                 category: displayCategory,
                 image: getImageForItem(item.name, displayCategory),
-                desc: getDescription(item.name),
+                desc: getDescription(item),
             });
         });
     });

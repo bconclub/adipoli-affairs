@@ -233,17 +233,23 @@ export async function initializeMenuItems(fullMenuItems: MenuItem[]): Promise<Me
         }
     }
     
-    // If items exist, always update descriptions from source to ensure they're current
+    // If items exist, update descriptions from source only if missing or generic (preserve admin edits)
     if (items.length > 0 && fullMenuItems.length > 0) {
         const sourceMap = new Map(fullMenuItems.map(item => [item.name.toLowerCase(), item]));
         
-        // Update descriptions from source code (always sync from source)
+        // Check if description is generic (starts with "Delicious" and ends with "traditional cooking methods")
+        const isGenericDescription = (desc: string): boolean => {
+            return desc.toLowerCase().includes('delicious') && 
+                   desc.toLowerCase().includes('prepared with authentic kerala spices and traditional cooking methods');
+        };
+        
+        // Update descriptions from source code if missing or generic (preserves custom admin edits)
         let needsUpdate = false;
         items.forEach(item => {
             const sourceItem = sourceMap.get(item.name.toLowerCase());
             if (sourceItem && sourceItem.desc) {
-                // Always update description from source code (handles missing or outdated descriptions)
-                if (!item.desc || item.desc !== sourceItem.desc) {
+                // Update description if it's missing, empty, or generic (don't overwrite custom admin edits)
+                if (!item.desc || item.desc.trim() === '' || isGenericDescription(item.desc)) {
                     item.desc = sourceItem.desc;
                     needsUpdate = true;
                 }
