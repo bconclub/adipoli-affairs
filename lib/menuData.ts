@@ -1,5 +1,7 @@
 // Menu data management with server-side file storage via PHP API
 
+import { TimeRestriction } from './utils';
+
 export interface MenuItem {
     id: number;
     name: string;
@@ -9,6 +11,7 @@ export interface MenuItem {
     desc: string;
     featured?: boolean;
     featuredImage?: string; // Optional featured image for TV/display boards
+    timeRestriction?: TimeRestriction; // Optional time restriction for menu availability
 }
 
 export interface FeaturedItem {
@@ -349,6 +352,12 @@ export async function reorderFeaturedItems(newOrder: FeaturedItem[]): Promise<bo
 // Upload image to server
 export async function uploadImage(file: File, category: string, productName: string): Promise<string | null> {
     try {
+        // In development mode, PHP won't execute, so skip API call
+        if (isDevelopment) {
+            console.log('Development mode: Image upload skipped (PHP not available). Images should be stored as base64.');
+            return null;
+        }
+        
         const formData = new FormData();
         formData.append('image', file);
         formData.append('category', category);
@@ -360,13 +369,39 @@ export async function uploadImage(file: File, category: string, productName: str
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            console.error('Failed to upload image:', error);
+            const responseText = await response.text();
+            
+            // Check if response is HTML (404 page or error page)
+            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<!')) {
+                console.warn('API endpoint returned HTML (likely 404). Development mode detected.');
+                return null;
+            }
+            
+            // Try to parse as JSON error
+            try {
+                const error = JSON.parse(responseText);
+                console.error('Failed to upload image:', error);
+            } catch (e) {
+                console.error('Failed to upload image: HTTP', response.status, responseText.substring(0, 100));
+            }
             return null;
         }
         
-        const result = await response.json();
-        return result.success ? result.path : null;
+        const responseText = await response.text();
+        
+        // Check if response is HTML (shouldn't happen but handle it)
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<!')) {
+            console.warn('API endpoint returned HTML instead of JSON');
+            return null;
+        }
+        
+        try {
+            const result = JSON.parse(responseText);
+            return result.success ? result.path : null;
+        } catch (parseError) {
+            console.error('Failed to parse upload response as JSON:', responseText.substring(0, 100));
+            return null;
+        }
     } catch (error) {
         console.error('Error uploading image:', error);
         return null;

@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Filter, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { useCart } from '@/contexts/CartContext';
-import { formatProductName } from '@/lib/utils';
+import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
 import { loadMenuItems, initializeMenuItems, type MenuItem as MenuItemType } from '@/lib/menuData';
 
 // Use the MenuItem type from menuData
@@ -128,8 +128,18 @@ const transformMenuData = (): MenuItem[] => {
     let id = 1;
     const items: MenuItem[] = [];
     
+    // Define time restrictions by category name (from menu data)
+    const timeRestrictionsByCategory: Record<string, TimeRestriction> = {
+        "Idly & DOSA": { start: "12:00", end: "17:00" }, // South Specials: 12pm-5pm
+        "Kerala Meals (12pm to 3pm)": { start: "12:00", end: "15:00" }, // Kerala Meals: 12pm-3pm
+        "SNACKS": { start: "16:00", end: "22:00" }, // Snacks: 4pm-10pm
+        "INDO CHINESE - VEG": { start: "17:00", end: "22:00" }, // Indo-Chinese: 5pm-10pm
+        "INDO CHINESE - NON VEG": { start: "17:00", end: "22:00" }, // Indo-Chinese: 5pm-10pm
+    };
+    
     menuData.forEach(category => {
         const displayCategory = CATEGORY_MAP[category.name] || category.name;
+        const timeRestriction = timeRestrictionsByCategory[category.name];
         
         category.items.forEach(item => {
             // Handle special pricing for Vizhinjam Chicken Fry - split into half and full
@@ -141,6 +151,7 @@ const transformMenuData = (): MenuItem[] => {
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
                     desc: getDescription(item),
+                    timeRestriction: timeRestriction,
                 });
                 items.push({
                     id: id++,
@@ -149,6 +160,7 @@ const transformMenuData = (): MenuItem[] => {
                     category: displayCategory,
                     image: getImageForItem(item.name, displayCategory),
                     desc: getDescription(item),
+                    timeRestriction: timeRestriction,
                 });
                 return;
             }
@@ -160,6 +172,7 @@ const transformMenuData = (): MenuItem[] => {
                 category: displayCategory,
                 image: getImageForItem(item.name, displayCategory),
                 desc: getDescription(item),
+                timeRestriction: timeRestriction,
             });
         });
     });
@@ -174,6 +187,7 @@ export default function MenuPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categoryScrollPositions, setCategoryScrollPositions] = useState<Record<string, number>>({});
+    const [currentTime, setCurrentTime] = useState<Date>(new Date()); // For real-time updates
     const { addItem } = useCart();
 
     // Load menu items from localStorage (same as admin panel uses)
@@ -224,6 +238,15 @@ export default function MenuPage() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
         };
+    }, []);
+
+    // Real-time time updates every minute
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000); // Update every minute
+
+        return () => clearInterval(interval);
     }, []);
 
     const formatPrice = (price: number | { half?: number; full?: number }): string => {
@@ -297,6 +320,11 @@ export default function MenuPage() {
 
 
     const handleAddToOrder = (item: MenuItem) => {
+        // Prevent adding unavailable items
+        if (!isItemAvailableNow(item.timeRestriction)) {
+            return;
+        }
+
         const price = getPriceValue(item.price);
         // Use the same image path logic as displayed on menu
         const imagePath = getImagePathFromPublic(item.name, item.category);
@@ -531,10 +559,13 @@ export default function MenuPage() {
                                         ? item.image 
                                         : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
                                     
+                                    const isAvailable = isItemAvailableNow(item.timeRestriction);
+                                    const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
+                                    
                                     return (
                                         <motion.div
                                             key={item.id}
-                                            whileHover={{ scale: 1.05, y: -8 }}
+                                            whileHover={isAvailable ? { scale: 1.05, y: -8 } : {}}
                                             transition={{ duration: 0.3 }}
                                             style={{
                                                 minWidth: '320px',
@@ -545,10 +576,13 @@ export default function MenuPage() {
                                                 border: '1px solid rgba(255,255,255,0.1)',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.3s'
+                                                cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                                transition: 'all 0.3s',
+                                                opacity: isAvailable ? 1 : 0.5,
+                                                position: 'relative'
                                             }}
-                                            onClick={() => handleAddToOrder(item)}
+                                            onClick={() => isAvailable && handleAddToOrder(item)}
+                                            title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                         >
                                             <div style={{
                                                 position: 'relative',
@@ -585,16 +619,44 @@ export default function MenuPage() {
                                                 }}>
                                                     {formatPrice(item.price)}
                                                 </div>
+                                                {!isAvailable && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '1rem',
+                                                        left: '1rem',
+                                                        background: 'rgba(0, 0, 0, 0.7)',
+                                                        color: 'white',
+                                                        padding: '0.5rem',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        backdropFilter: 'blur(4px)'
+                                                    }}
+                                                    title={`Available ${timeRange} only (NZ time)`}
+                                                    >
+                                                        <Clock size={20} />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                <h3 style={{ 
-                                                    fontSize: '1.25rem', 
-                                                    marginBottom: '0.5rem',
-                                                    fontWeight: '600',
-                                                    color: 'var(--text-main)'
-                                                }}>
-                                                    {formatProductName(item.name)}
-                                                </h3>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                    <h3 style={{ 
+                                                        fontSize: '1.25rem', 
+                                                        margin: 0,
+                                                        fontWeight: '600',
+                                                        color: 'var(--text-main)'
+                                                    }}>
+                                                        {formatProductName(item.name)}
+                                                    </h3>
+                                                    {!isAvailable && (
+                                                        <Clock 
+                                                            size={16} 
+                                                            style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
+                                                            title={`Available ${timeRange} only (NZ time)`}
+                                                        />
+                                                    )}
+                                                </div>
                                                 <p style={{ 
                                                     fontSize: '0.9rem', 
                                                     color: 'var(--text-secondary)',
@@ -610,13 +672,22 @@ export default function MenuPage() {
                                                 </p>
                                                 <button
                                                     className="btn btn-primary"
-                                                    style={{ width: '100%' }}
+                                                    style={{ 
+                                                        width: '100%',
+                                                        opacity: isAvailable ? 1 : 0.5,
+                                                        cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                                        pointerEvents: isAvailable ? 'auto' : 'none'
+                                                    }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleAddToOrder(item);
+                                                        if (isAvailable) {
+                                                            handleAddToOrder(item);
+                                                        }
                                                     }}
+                                                    disabled={!isAvailable}
+                                                    title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                                 >
-                                                    Add to Order
+                                                    {isAvailable ? 'Add to Order' : `Available ${timeRange} only`}
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -633,10 +704,13 @@ export default function MenuPage() {
                                 ? item.image 
                                 : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
                             
+                            const isAvailable = isItemAvailableNow(item.timeRestriction);
+                            const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
+                            
                             return (
                                 <motion.div
                                     key={item.id}
-                                    whileHover={{ scale: 1.03, y: -5 }}
+                                    whileHover={isAvailable ? { scale: 1.03, y: -5 } : {}}
                                     transition={{ duration: 0.3 }}
                                     style={{
                                         background: 'rgba(255,255,255,0.05)',
@@ -645,9 +719,12 @@ export default function MenuPage() {
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        cursor: 'pointer'
+                                        cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                        opacity: isAvailable ? 1 : 0.5,
+                                        position: 'relative'
                                     }}
-                                    onClick={() => handleAddToOrder(item)}
+                                    onClick={() => isAvailable && handleAddToOrder(item)}
+                                    title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                 >
                                     <div style={{
                                         position: 'relative',
@@ -684,16 +761,44 @@ export default function MenuPage() {
                                         }}>
                                             {formatPrice(item.price)}
                                         </div>
+                                        {!isAvailable && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                left: '1rem',
+                                                background: 'rgba(0, 0, 0, 0.7)',
+                                                color: 'white',
+                                                padding: '0.5rem',
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backdropFilter: 'blur(4px)'
+                                            }}
+                                            title={`Available ${timeRange} only (NZ time)`}
+                                            >
+                                                <Clock size={20} />
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <h3 style={{
-                                            fontSize: '1.25rem',
-                                            marginBottom: '0.5rem',
-                                            fontWeight: '600',
-                                            color: 'var(--text-main)'
-                                        }}>
-                                            {formatProductName(item.name)}
-                                        </h3>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                            <h3 style={{
+                                                fontSize: '1.25rem',
+                                                margin: 0,
+                                                fontWeight: '600',
+                                                color: 'var(--text-main)'
+                                            }}>
+                                                {formatProductName(item.name)}
+                                            </h3>
+                                            {!isAvailable && (
+                                                <Clock 
+                                                    size={16} 
+                                                    style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
+                                                    title={`Available ${timeRange} only (NZ time)`}
+                                                />
+                                            )}
+                                        </div>
                                         <p style={{
                                             fontSize: '0.9rem',
                                             color: 'var(--text-secondary)',
@@ -705,13 +810,22 @@ export default function MenuPage() {
                                         </p>
                                         <button
                                             className="btn btn-primary"
-                                            style={{ width: '100%' }}
+                                            style={{ 
+                                                width: '100%',
+                                                opacity: isAvailable ? 1 : 0.5,
+                                                cursor: isAvailable ? 'pointer' : 'not-allowed',
+                                                pointerEvents: isAvailable ? 'auto' : 'none'
+                                            }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleAddToOrder(item);
+                                                if (isAvailable) {
+                                                    handleAddToOrder(item);
+                                                }
                                             }}
+                                            disabled={!isAvailable}
+                                            title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                         >
-                                            Add to Order
+                                            {isAvailable ? 'Add to Order' : `Available ${timeRange} only`}
                                         </button>
                                     </div>
                                 </motion.div>
