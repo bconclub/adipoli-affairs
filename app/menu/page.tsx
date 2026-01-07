@@ -650,11 +650,12 @@ export default function MenuPage() {
                                                         {formatProductName(item.name)}
                                                     </h3>
                                                     {!isAvailable && (
-                                                        <Clock 
-                                                            size={16} 
-                                                            style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
-                                                            title={`Available ${timeRange} only (NZ time)`}
-                                                        />
+                                                        <span title={`Available ${timeRange} only (NZ time)`}>
+                                                            <Clock 
+                                                                size={16} 
+                                                                style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
+                                                            />
+                                                        </span>
                                                     )}
                                                 </div>
                                                 <p style={{ 
@@ -792,11 +793,12 @@ export default function MenuPage() {
                                                 {formatProductName(item.name)}
                                             </h3>
                                             {!isAvailable && (
-                                                <Clock 
-                                                    size={16} 
-                                                    style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
-                                                    title={`Available ${timeRange} only (NZ time)`}
-                                                />
+                                                <span title={`Available ${timeRange} only (NZ time)`}>
+                                                    <Clock 
+                                                        size={16} 
+                                                        style={{ color: 'var(--text-secondary)', flexShrink: 0 }}
+                                                    />
+                                                </span>
                                             )}
                                         </div>
                                         <p style={{
