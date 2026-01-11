@@ -374,7 +374,15 @@ export default function FeaturedPage() {
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
-                                    <button className="btn btn-primary" style={{ flex: 1 }}>Order Now</button>
+                                    <a 
+                                        href="https://order.sipocloudpos.com/adipoli-affairs" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="btn btn-primary" 
+                                        style={{ flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        Order Now
+                                    </a>
                                 </div>
 
                                 {/* Mobile Controls */}
@@ -461,7 +469,15 @@ export default function FeaturedPage() {
                                     <p className={styles.description}>{items[currentIndex]?.description || ''}</p>
 
                                     <div style={{ display: 'flex', gap: '1rem' }}>
-                                        <button className="btn btn-primary">Order Now</button>
+                                        <a 
+                                            href="https://order.sipocloudpos.com/adipoli-affairs" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="btn btn-primary"
+                                            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            Order Now
+                                        </a>
                                     </div>
                                 </div>
 

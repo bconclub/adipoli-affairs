@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
-import { useCart } from '@/contexts/CartContext';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
 import { loadMenuItems, initializeMenuItems, type MenuItem as MenuItemType } from '@/lib/menuData';
 
@@ -188,7 +187,6 @@ export default function MenuPage() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categoryScrollPositions, setCategoryScrollPositions] = useState<Record<string, number>>({});
     const [currentTime, setCurrentTime] = useState<Date>(new Date()); // For real-time updates
-    const { addItem } = useCart();
 
     // Load menu items from localStorage (same as admin panel uses)
     useEffect(() => {
@@ -318,23 +316,6 @@ export default function MenuPage() {
             return 0;
         });
 
-
-    const handleAddToOrder = (item: MenuItem) => {
-        // Prevent adding unavailable items
-        if (!isItemAvailableNow(item.timeRestriction)) {
-            return;
-        }
-
-        const price = getPriceValue(item.price);
-        // Use the same image path logic as displayed on menu
-        const imagePath = getImagePathFromPublic(item.name, item.category);
-        addItem({
-            id: item.id,
-            name: item.name,
-            price: price,
-            image: imagePath,
-        });
-    };
 
     // Group items by category
     const itemsByCategory = useMemo(() => {
@@ -576,12 +557,10 @@ export default function MenuPage() {
                                                 border: '1px solid rgba(255,255,255,0.1)',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                cursor: isAvailable ? 'pointer' : 'not-allowed',
                                                 transition: 'all 0.3s',
                                                 opacity: isAvailable ? 1 : 0.5,
                                                 position: 'relative'
                                             }}
-                                            onClick={() => isAvailable && handleAddToOrder(item)}
                                             title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                         >
                                             <div style={{
@@ -671,25 +650,24 @@ export default function MenuPage() {
                                                 }}>
                                                     {item.desc}
                                                 </p>
-                                                <button
+                                                <a
+                                                    href="https://order.sipocloudpos.com/adipoli-affairs"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
                                                     className="btn btn-primary"
                                                     style={{ 
                                                         width: '100%',
-                                                        opacity: isAvailable ? 1 : 0.5,
-                                                        cursor: isAvailable ? 'pointer' : 'not-allowed',
-                                                        pointerEvents: isAvailable ? 'auto' : 'none'
+                                                        textDecoration: 'none',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (isAvailable) {
-                                                            handleAddToOrder(item);
-                                                        }
                                                     }}
-                                                    disabled={!isAvailable}
-                                                    title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                                 >
-                                                    {isAvailable ? 'Add to Order' : `Available ${timeRange} only`}
-                                                </button>
+                                                    Add to Order
+                                                </a>
                                             </div>
                                         </motion.div>
                                     );
@@ -720,11 +698,9 @@ export default function MenuPage() {
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        cursor: isAvailable ? 'pointer' : 'not-allowed',
                                         opacity: isAvailable ? 1 : 0.5,
                                         position: 'relative'
                                     }}
-                                    onClick={() => isAvailable && handleAddToOrder(item)}
                                     title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                 >
                                     <div style={{
@@ -810,25 +786,24 @@ export default function MenuPage() {
                                         }}>
                                             {item.desc}
                                         </p>
-                                        <button
+                                        <a
+                                            href="https://order.sipocloudpos.com/adipoli-affairs"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             className="btn btn-primary"
                                             style={{ 
                                                 width: '100%',
-                                                opacity: isAvailable ? 1 : 0.5,
-                                                cursor: isAvailable ? 'pointer' : 'not-allowed',
-                                                pointerEvents: isAvailable ? 'auto' : 'none'
+                                                textDecoration: 'none',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
                                             }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (isAvailable) {
-                                                    handleAddToOrder(item);
-                                                }
                                             }}
-                                            disabled={!isAvailable}
-                                            title={!isAvailable && timeRange ? `Available ${timeRange} only (NZ time)` : undefined}
                                         >
-                                            {isAvailable ? 'Add to Order' : `Available ${timeRange} only`}
-                                        </button>
+                                            Add to Order
+                                        </a>
                                     </div>
                                 </motion.div>
                             );

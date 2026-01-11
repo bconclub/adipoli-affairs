@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadMenuItems, type MenuItem } from "@/lib/menuData";
@@ -17,7 +16,6 @@ interface FeaturedItem {
 }
 
 export default function Home() {
-  const { addItem } = useCart();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([]);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
@@ -212,17 +210,6 @@ export default function Home() {
     }
   };
 
-  const handleAddToOrder = (item: FeaturedItem) => {
-    const priceMatch = item.price.match(/\$?([\d.]+)/);
-    const price = priceMatch ? parseFloat(priceMatch[1]) : 0;
-    addItem({
-      id: item.id,
-      name: item.name,
-      price: price,
-      image: item.image,
-    });
-  };
-
   return (
     <div className="home-wrapper" style={{ marginTop: '-80px' }}>
       {/* Hero Section - Full Screen */}
@@ -320,13 +307,13 @@ export default function Home() {
               gap: isMobile ? '0.75rem' : '1rem',
               flexDirection: isMobile ? 'column' : 'row'
             }}>
-              <Link href="/menu" className="btn btn-primary" style={{ 
+              <a href="https://order.sipocloudpos.com/adipoli-affairs" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ 
                 width: isMobile ? '100%' : 'auto',
                 justifyContent: 'center',
                 padding: isMobile ? '0.75rem 1.5rem' : undefined
               }}>
                 Order Now <ArrowRight size={isMobile ? 18 : 20} style={{ marginLeft: '0.5rem' }} />
-              </Link>
+              </a>
               <Link href="/featured" className="btn btn-outline" style={{ 
                 color: 'white', 
                 borderColor: 'white',
@@ -533,16 +520,22 @@ export default function Home() {
                             {item.price}
                           </span>
                         </div>
-                        <button
+                        <a
+                          href="https://order.sipocloudpos.com/adipoli-affairs"
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="btn btn-primary"
                           style={{
                             width: '100%',
-                            padding: '0.75rem 1.5rem'
+                            padding: '0.75rem 1.5rem',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
-                          onClick={() => handleAddToOrder(item)}
                         >
                           Add to Order <ArrowRight size={18} style={{ marginLeft: '0.5rem' }} />
-                        </button>
+                        </a>
                       </div>
                     </div>
                   ))}
@@ -696,16 +689,22 @@ export default function Home() {
                           {featuredItems[currentCarouselIndex]?.price}
                         </span>
                       </div>
-                      <button
+                      <a
+                        href="https://order.sipocloudpos.com/adipoli-affairs"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="btn btn-primary"
                         style={{
                           width: '100%',
-                          padding: '0.75rem 1.5rem'
+                          padding: '0.75rem 1.5rem',
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
-                        onClick={() => handleAddToOrder(featuredItems[currentCarouselIndex])}
                       >
                         Add to Order <ArrowRight size={18} style={{ marginLeft: '0.5rem' }} />
-                      </button>
+                      </a>
                     </div>
                   </motion.div>
                 </AnimatePresence>

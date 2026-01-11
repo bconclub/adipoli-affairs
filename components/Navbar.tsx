@@ -4,9 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, UtensilsCrossed } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
-import Cart from "./Cart";
+import { Menu, X } from "lucide-react";
 import styles from "./Navbar.module.css";
 
 const navLinks = [
@@ -22,8 +20,6 @@ export default function Navbar() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const { openCart, getItemCount } = useCart();
-    const itemCount = getItemCount();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -67,16 +63,22 @@ export default function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    <button 
-                        className={styles.cartButton}
-                        onClick={openCart}
-                        aria-label="Open order"
+                    <a
+                        href="https://order.sipocloudpos.com/adipoli-affairs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0.5rem 1.5rem',
+                            fontSize: '0.95rem'
+                        }}
                     >
-                        <UtensilsCrossed size={20} />
-                        {itemCount > 0 && (
-                            <span className={styles.cartBadge}>{itemCount}</span>
-                        )}
-                    </button>
+                        Order Now
+                    </a>
                 </nav>
 
                 {/* Mobile Menu Toggle */}
@@ -96,21 +98,26 @@ export default function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    <button 
-                        className={styles.cartButton}
-                        onClick={openCart}
-                        style={{ width: "100%", marginTop: "1rem", justifyContent: "center" }}
-                        aria-label="Open order"
+                    <a
+                        href="https://order.sipocloudpos.com/adipoli-affairs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{
+                            width: "100%",
+                            marginTop: "1rem",
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0.75rem 1.5rem'
+                        }}
+                        onClick={() => setIsOpen(false)}
                     >
-                        <UtensilsCrossed size={20} />
-                        <span style={{ marginLeft: "0.5rem" }}>View Order</span>
-                        {itemCount > 0 && (
-                            <span className={styles.cartBadge}>{itemCount}</span>
-                        )}
-                    </button>
+                        Order Now
+                    </a>
                 </div>
             </div>
-            <Cart />
         </header>
     );
 }
