@@ -560,7 +560,9 @@ export default function MenuPage() {
                                                     }}
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        if (!target.src.startsWith('data:image/')) {
+                                                        if (target.src.endsWith('.png')) {
+                                                            target.src = target.src.replace('.png', '.jpg');
+                                                        } else if (!target.src.startsWith('data:image/')) {
                                                             target.src = PLACEHOLDER_IMAGE;
                                                         }
                                                     }}
@@ -712,7 +714,9 @@ export default function MenuPage() {
                                             }}
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
-                                                if (!target.src.startsWith('data:image/')) {
+                                                if (target.src.endsWith('.png')) {
+                                                    target.src = target.src.replace('.png', '.jpg');
+                                                } else if (!target.src.startsWith('data:image/')) {
                                                     target.src = PLACEHOLDER_IMAGE;
                                                 }
                                             }}
