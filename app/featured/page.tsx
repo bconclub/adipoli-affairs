@@ -27,15 +27,8 @@ export default function FeaturedPage() {
     const [progress, setProgress] = useState(0);
     const [fullScreen, setFullScreen] = useState(true);
 
-    // Helper function to get fallback image
-    const getFallbackImage = (name: string): string => {
-        if (!name) return '/images/hero.png';
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('chicken')) return "/images/chicken.png";
-        if (lowerName.includes('beef')) return "/images/beef.png";
-        if (lowerName.includes('biryani')) return "/images/biryani.png";
-        return "/images/hero.png";
-    };
+    // Placeholder SVG for missing images
+    const PLACEHOLDER_IMAGE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="#1a1a1a" width="400" height="240"/><g transform="translate(200,100)" fill="none" stroke="#555" stroke-width="2"><rect x="-30" y="-25" width="60" height="50" rx="4"/><circle cx="-15" cy="-10" r="5"/><polyline points="-25,20 -5,-5 10,10 25,-5 30,10"/></g><text x="200" y="160" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="14">Image coming soon</text></svg>`)}`;
 
     // Load featured menu items
     useEffect(() => {
@@ -69,13 +62,13 @@ export default function FeaturedPage() {
                             if (sanitizedCategory && sanitizedProductName) {
                                 imagePath = `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
                             } else {
-                                imagePath = getFallbackImage(item.name);
+                                imagePath = PLACEHOLDER_IMAGE;
                             }
                         }
                         
                         // Ensure it starts with / or http
                         if (!imagePath.startsWith('/') && !imagePath.startsWith('http')) {
-                            imagePath = getFallbackImage(item.name);
+                            imagePath = PLACEHOLDER_IMAGE;
                         }
                         
                         return {
@@ -309,10 +302,8 @@ export default function FeaturedPage() {
                                         }}
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
-                                            const fallback = getFallbackImage(items[currentIndex]?.name);
-                                            const fallbackUrl = new URL(fallback, window.location.origin).href;
-                                            if (target.src !== fallbackUrl) {
-                                                target.src = fallback;
+                                            if (!target.src.startsWith('data:image/')) {
+                                                target.src = PLACEHOLDER_IMAGE;
                                             }
                                         }}
                                     />
@@ -442,11 +433,8 @@ export default function FeaturedPage() {
                                     }}
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        const fallback = getFallbackImage(items[currentIndex]?.name);
-                                        const fallbackUrl = new URL(fallback, window.location.origin).href;
-                                        if (target.src !== fallbackUrl) {
-                                            console.log(`Image failed to load: ${target.src}, using fallback: ${fallback}`);
-                                            target.src = fallback;
+                                        if (!target.src.startsWith('data:image/')) {
+                                            target.src = PLACEHOLDER_IMAGE;
                                         }
                                     }}
                                     onLoad={() => {

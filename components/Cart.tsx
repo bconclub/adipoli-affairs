@@ -18,52 +18,18 @@ const sanitizeName = (name: string | undefined | null): string => {
         .replace(/^-+|-+$/g, '');
 };
 
-// Get image path from public folder based on product name, or use base64 data URL if present
+// Placeholder SVG for missing images
+const PLACEHOLDER_IMAGE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="#1a1a1a" width="400" height="240"/><g transform="translate(200,100)" fill="none" stroke="#555" stroke-width="2"><rect x="-30" y="-25" width="60" height="50" rx="4"/><circle cx="-15" cy="-10" r="5"/><polyline points="-25,20 -5,-5 10,10 25,-5 30,10"/></g><text x="200" y="160" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="14">Image coming soon</text></svg>`)}`;
+
+// Get image path: use base64 or structured path if available, otherwise placeholder
 const getImagePathFromPublic = (name: string, currentImage: string): string => {
-    // If image is a base64 data URL, use it directly
     if (currentImage && currentImage.startsWith('data:image/')) {
         return currentImage;
     }
-    
-    // If the image path already looks like it's from public folder with category structure, use it
-    if (currentImage && currentImage.startsWith('/images/')) {
-        const pathParts = currentImage.split('/');
-        // Path format: /images/{category}/{product-name}.png or /images/{product-name}.png
-        if (pathParts.length >= 3 && pathParts[2] !== '') {
-            // Has category structure, use it
-            return currentImage;
-        }
+    if (currentImage && currentImage.startsWith('/images/') && currentImage.split('/').length >= 4) {
+        return currentImage;
     }
-    
-    // Fallback: try to construct path from name by inferring category
-    const sanitizedProductName = sanitizeName(name);
-    if (!sanitizedProductName) return currentImage || '/images/hero.png';
-    
-    const lowerName = name.toLowerCase();
-    
-    // Try to match categories based on product name patterns
-    if (lowerName.includes('soup')) {
-        return `/images/soups/${sanitizedProductName}.png`;
-    }
-    if (lowerName.includes('starter') || lowerName.includes('fry') || lowerName.includes('65') || 
-        lowerName.includes('prawn') || lowerName.includes('squid') || lowerName.includes('dragon')) {
-        return `/images/starters/${sanitizedProductName}.png`;
-    }
-    if (lowerName.includes('combo') || lowerName.includes('nidhi')) {
-        return `/images/combo-specials/${sanitizedProductName}.png`;
-    }
-    if (lowerName.includes('biryani')) {
-        return `/images/biryani.png`;
-    }
-    if (lowerName.includes('chicken') && !lowerName.includes('soup')) {
-        return `/images/chicken.png`;
-    }
-    if (lowerName.includes('beef') && !lowerName.includes('soup')) {
-        return `/images/beef.png`;
-    }
-    
-    // Return original image if we can't determine, or fallback to hero
-    return currentImage || '/images/hero.png';
+    return PLACEHOLDER_IMAGE;
 };
 
 export default function Cart() {
@@ -204,9 +170,8 @@ Thank you for your order!`;
                                                     }}
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        // Don't try to fallback if it's a base64 data URL (shouldn't fail)
-                                                        if (!target.src.startsWith('data:image/') && !target.src.endsWith('/images/hero.png')) {
-                                                            target.src = '/images/hero.png';
+                                                        if (!target.src.startsWith('data:image/')) {
+                                                            target.src = PLACEHOLDER_IMAGE;
                                                         }
                                                     }}
                                                 />

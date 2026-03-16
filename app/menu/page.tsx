@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
@@ -78,42 +78,22 @@ const sanitizeName = (name: string | undefined | null): string => {
 
 // Get image path from public folder based on product name and category
 const getImagePathFromPublic = (name: string | undefined | null, category: string | undefined | null): string => {
-    if (!name || !category) return '/images/hero.png';
+    if (!name || !category) return PLACEHOLDER_IMAGE;
     const sanitizedCategory = sanitizeName(category);
     const sanitizedProductName = sanitizeName(name);
-    
-    if (!sanitizedCategory || !sanitizedProductName) return '/images/hero.png';
-    
-    // Return the expected path (png is most common, browser will try to load it)
-    // If it doesn't exist, we'll fall back in the component
+
+    if (!sanitizedCategory || !sanitizedProductName) return PLACEHOLDER_IMAGE;
+
     return `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
 };
 
-// Fallback image based on item name
-const getFallbackImage = (name: string | undefined | null): string => {
-    if (!name) return '/images/hero.png';
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('chicken')) return "/images/chicken.png";
-    if (lowerName.includes('beef')) return "/images/beef.png";
-    if (lowerName.includes('biryani')) return "/images/biryani.png";
-    return "/images/hero.png";
-};
+// Placeholder SVG data URL for missing images
+const PLACEHOLDER_IMAGE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="#1a1a1a" width="400" height="240"/><g transform="translate(200,100)" fill="none" stroke="#555" stroke-width="2"><rect x="-30" y="-25" width="60" height="50" rx="4"/><circle cx="-15" cy="-10" r="5"/><polyline points="-25,20 -5,-5 10,10 25,-5 30,10"/></g><text x="200" y="160" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="14">Image coming soon</text></svg>`)}`;
 
-// Helper function to get image - checks public folder first, then defaults
+// Helper function to get image - checks public folder first, then placeholder
 const getImageForItem = (name: string | undefined | null, category: string | undefined | null): string => {
-    if (!name || !category) return '/images/hero.png';
-    
-    // First try to get from public folder based on name and category
-    const publicPath = getImagePathFromPublic(name, category);
-    
-    // Fallback to default images if needed
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('chicken') && !publicPath.includes('soup')) return "/images/chicken.png";
-    if (lowerName.includes('beef') && !publicPath.includes('soup')) return "/images/beef.png";
-    if (lowerName.includes('biryani')) return "/images/biryani.png";
-    
-    // Return the public folder path (browser will handle 404)
-    return publicPath;
+    if (!name || !category) return PLACEHOLDER_IMAGE;
+    return getImagePathFromPublic(name, category);
 };
 
 // Helper function to generate description (same as admin panel)
@@ -538,7 +518,7 @@ export default function MenuPage() {
                                 {items.map(item => {
                                     const imagePath = item?.image?.startsWith('data:image/') 
                                         ? item.image 
-                                        : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
+                                        : (getImagePathFromPublic(item?.name, item?.category) || PLACEHOLDER_IMAGE);
                                     
                                     const isAvailable = isItemAvailableNow(item.timeRestriction);
                                     const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
@@ -580,8 +560,8 @@ export default function MenuPage() {
                                                     }}
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
-                                                            target.src = getFallbackImage(item.name);
+                                                        if (!target.src.startsWith('data:image/')) {
+                                                            target.src = PLACEHOLDER_IMAGE;
                                                         }
                                                     }}
                                                 />
@@ -650,12 +630,24 @@ export default function MenuPage() {
                                                 }}>
                                                     {item.desc}
                                                 </p>
+                                                {item.category === 'Main Course' && (
+                                                    <p style={{
+                                                        fontSize: '0.75rem',
+                                                        color: 'var(--primary)',
+                                                        marginBottom: '0.5rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.3rem'
+                                                    }}>
+                                                        <Star size={12} fill="var(--primary)" /> Complimentary rice included
+                                                    </p>
+                                                )}
                                                 <a
                                                     href="https://order.sipocloudpos.com/adipoli-affairs"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="btn btn-primary"
-                                                    style={{ 
+                                                    style={{
                                                         width: '100%',
                                                         textDecoration: 'none',
                                                         display: 'flex',
@@ -681,7 +673,7 @@ export default function MenuPage() {
                         {filteredItems.map(item => {
                             const imagePath = item?.image?.startsWith('data:image/') 
                                 ? item.image 
-                                : (getImagePathFromPublic(item?.name, item?.category) || '/images/hero.png');
+                                : (getImagePathFromPublic(item?.name, item?.category) || PLACEHOLDER_IMAGE);
                             
                             const isAvailable = isItemAvailableNow(item.timeRestriction);
                             const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
@@ -720,8 +712,8 @@ export default function MenuPage() {
                                             }}
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
-                                                if (!target.src.startsWith('data:image/') && target.src !== new URL(getFallbackImage(item.name), window.location.origin).href) {
-                                                    target.src = getFallbackImage(item.name);
+                                                if (!target.src.startsWith('data:image/')) {
+                                                    target.src = PLACEHOLDER_IMAGE;
                                                 }
                                             }}
                                         />
@@ -786,12 +778,24 @@ export default function MenuPage() {
                                         }}>
                                             {item.desc}
                                         </p>
+                                        {item.category === 'Main Course' && (
+                                            <p style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--primary)',
+                                                marginBottom: '0.5rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.3rem'
+                                            }}>
+                                                <Star size={12} fill="var(--primary)" /> Complimentary rice included
+                                            </p>
+                                        )}
                                         <a
                                             href="https://order.sipocloudpos.com/adipoli-affairs"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="btn btn-primary"
-                                            style={{ 
+                                            style={{
                                                 width: '100%',
                                                 textDecoration: 'none',
                                                 display: 'flex',

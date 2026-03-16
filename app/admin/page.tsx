@@ -64,13 +64,12 @@ const CATEGORIES = [
     "Milkshake"
 ];
 
-// Helper function to get image based on item name
+// Placeholder SVG for missing images
+const PLACEHOLDER_IMAGE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="#1a1a1a" width="400" height="240"/><g transform="translate(200,100)" fill="none" stroke="#555" stroke-width="2"><rect x="-30" y="-25" width="60" height="50" rx="4"/><circle cx="-15" cy="-10" r="5"/><polyline points="-25,20 -5,-5 10,10 25,-5 30,10"/></g><text x="200" y="160" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="14">Image coming soon</text></svg>`)}`;
+
+// Helper function to get image path from public folder, or placeholder
 const getImageForItem = (name: string): string => {
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('chicken')) return "/images/chicken.png";
-    if (lowerName.includes('beef')) return "/images/beef.png";
-    if (lowerName.includes('biryani')) return "/images/biryani.png";
-    return "/images/hero.png";
+    return PLACEHOLDER_IMAGE;
 };
 
 // Sanitize name for file path (same as menu page)
@@ -84,24 +83,17 @@ const sanitizeName = (name: string | undefined | null): string => {
 
 // Get image path from public folder based on product name and category
 const getImagePathFromPublic = (name: string | undefined | null, category: string | undefined | null): string => {
-    if (!name || !category) return '/images/hero.png';
+    if (!name || !category) return PLACEHOLDER_IMAGE;
     const sanitizedCategory = sanitizeName(category);
     const sanitizedProductName = sanitizeName(name);
-    
-    if (!sanitizedCategory || !sanitizedProductName) return '/images/hero.png';
-    
+
+    if (!sanitizedCategory || !sanitizedProductName) return PLACEHOLDER_IMAGE;
+
     return `/images/${sanitizedCategory}/${sanitizedProductName}.png`;
 };
 
-// Fallback image based on item name
-const getFallbackImage = (name: string | undefined | null): string => {
-    if (!name) return '/images/hero.png';
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('chicken')) return "/images/chicken.png";
-    if (lowerName.includes('beef')) return "/images/beef.png";
-    if (lowerName.includes('biryani')) return "/images/biryani.png";
-    return "/images/hero.png";
-};
+// Fallback for missing images
+const getFallbackImage = (): string => PLACEHOLDER_IMAGE;
 
 // Helper function to generate description
 const getDescription = (item: { name: string; description?: string }): string => {
@@ -153,7 +145,23 @@ const transformMenuData = (): MenuItem[] => {
     return items;
 };
 
+// SHA-256 hash of the admin password
+const ADMIN_PASSWORD_HASH = '7262963fa72b793da9974889e8171721dcf5563c906a38e8a5357e4ba949ee45';
+
+async function hashPassword(password: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export default function AdminPanel() {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
     const [activeTab, setActiveTab] = useState<'menu' | 'featured'>('menu');
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -164,9 +172,31 @@ export default function AdminPanel() {
     const [draggedItem, setDraggedItem] = useState<number | null>(null);
     const [draggedOver, setDraggedOver] = useState<number | null>(null);
 
+    // Check if already authenticated via sessionStorage
     useEffect(() => {
-        loadData();
+        const auth = sessionStorage.getItem('admin_auth');
+        if (auth === 'true') {
+            setIsAuthenticated(true);
+        }
+        setIsCheckingAuth(false);
     }, []);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoginError('');
+        const hash = await hashPassword(password);
+        if (hash === ADMIN_PASSWORD_HASH) {
+            setIsAuthenticated(true);
+            sessionStorage.setItem('admin_auth', 'true');
+        } else {
+            setLoginError('Incorrect password');
+            setPassword('');
+        }
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) loadData();
+    }, [isAuthenticated]);
 
     // Scroll to form when editing
     useEffect(() => {
@@ -240,6 +270,76 @@ export default function AdminPanel() {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
     });
+
+    if (isCheckingAuth) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary)' }} />
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#0a0a0a',
+                padding: '1rem'
+            }}>
+                <form onSubmit={handleLogin} style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '16px',
+                    padding: '2.5rem',
+                    width: '100%',
+                    maxWidth: '400px',
+                    textAlign: 'center'
+                }}>
+                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--primary)' }}>Admin Login</h1>
+                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>Enter password to access the admin panel</p>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        autoFocus
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '8px',
+                            border: loginError ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.2)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            marginBottom: '0.5rem',
+                            boxSizing: 'border-box'
+                        }}
+                    />
+                    {loginError && (
+                        <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '0.5rem 0' }}>{loginError}</p>
+                    )}
+                    <button type="submit" style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: 'var(--primary)',
+                        color: 'white',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        marginTop: '1rem'
+                    }}>
+                        Sign In
+                    </button>
+                </form>
+            </div>
+        );
+    }
 
     return (
         <div className="container section" style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -622,9 +722,8 @@ export default function AdminPanel() {
                                                             }}
                                                             onError={(e) => {
                                                                 const target = e.target as HTMLImageElement;
-                                                                const fallback = getFallbackImage(item.name);
-                                                                if (!target.src.startsWith('data:image/') && target.src !== new URL(fallback, window.location.origin).href) {
-                                                                    target.src = fallback;
+                                                                if (!target.src.startsWith('data:image/')) {
+                                                                    target.src = PLACEHOLDER_IMAGE;
                                                                 }
                                                             }}
                                                         />
