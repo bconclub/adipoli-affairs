@@ -641,7 +641,7 @@ export default function MenuPage() {
                                                         alignItems: 'center',
                                                         gap: '0.3rem'
                                                     }}>
-                                                        <Star size={12} fill="var(--primary)" /> Complimentary rice included
+                                                        <Star size={12} fill="var(--primary)" /> Complimentary rice not included
                                                     </p>
                                                 )}
                                                 <a
@@ -791,7 +791,7 @@ export default function MenuPage() {
                                                 alignItems: 'center',
                                                 gap: '0.3rem'
                                             }}>
-                                                <Star size={12} fill="var(--primary)" /> Complimentary rice included
+                                                <Star size={12} fill="var(--primary)" /> Complimentary rice not included
                                             </p>
                                         )}
                                         <a
