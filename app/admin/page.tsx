@@ -146,7 +146,7 @@ const transformMenuData = (): MenuItem[] => {
 };
 
 // SHA-256 hash of the admin password
-const ADMIN_PASSWORD_HASH = '7262963fa72b793da9974889e8171721dcf5563c906a38e8a5357e4ba949ee45';
+const ADMIN_PASSWORD_HASH = 'cf6cbd751dfc352c45cbef590f2222bef14c95bd0a6eb2ae40f5072c81afa3e2';
 
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
