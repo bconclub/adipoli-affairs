@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadMenuItems, type MenuItem } from "@/lib/menuData";
+import { initializeMenuItems, loadMenuItems, type MenuItem } from "@/lib/menuData";
+import { menuData } from "@/data/menu";
 
 interface FeaturedItem {
   id: number;
@@ -100,11 +101,88 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Transform menu data to MenuItem format (same as admin panel)
+  const transformMenuData = (): MenuItem[] => {
+    let id = 1;
+    const items: MenuItem[] = [];
+    
+    const CATEGORY_MAP: Record<string, string> = {
+      "SOUP": "Soups",
+      "STARTERS": "Starters",
+      "Idly & DOSA": "South Specials",
+      "BREADS": "Breads",
+      "Adipoli Special BIRYANI": "Biryani",
+      "COMBO": "Combo Specials",
+      "Kerala Meals (12pm to 3pm)": "Kerala Meals",
+      "MAIN COURSE - VEG": "Main Course",
+      "MAIN COURSE - EGG": "Main Course",
+      "MAIN COURSE - CHICKEN": "Main Course",
+      "MAIN COURSE - BEEF": "Main Course",
+      "MAIN COURSE - MUTTON (bone in)": "Main Course",
+      "Seafood - FISH": "Main Course",
+      "Seafood - PRAWNS": "Main Course",
+      "Seafood - SQUID": "Main Course",
+      "INDO CHINESE - VEG": "Indo-Chinese",
+      "INDO CHINESE - NON VEG": "Indo-Chinese",
+      "Fried RICE": "Fried Rice",
+      "NOODLES": "Noodles",
+      "SALAD": "Salad",
+      "Kids corner": "Kids Corner",
+      "Dessert": "Desserts",
+      "SIDES": "Sides",
+      "SNACKS": "Snacks",
+      "HOT DRINKS": "Hot Drinks",
+      "Cooldrinks": "Cool Drinks",
+      "JUICE": "Juice",
+      "MILK SHAKE": "Milkshake",
+    };
+    
+    menuData.forEach(category => {
+      const displayCategory = CATEGORY_MAP[category.name] || category.name;
+      
+      category.items.forEach(item => {
+        // Handle special pricing for Vizhinjam Chicken Fry - split into half and full
+        if (item.name.toLowerCase().includes('vizhinjam chicken fry')) {
+          items.push({
+            id: id++,
+            name: "Vizhinjam Chicken Fry (Bone-in) half",
+            price: 16.99,
+            category: displayCategory,
+            image: '',
+            desc: item.description || `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`,
+          });
+          items.push({
+            id: id++,
+            name: "Vizhinjam Chicken Fry (Bone-in) full",
+            price: 29.99,
+            category: displayCategory,
+            image: '',
+            desc: item.description || `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`,
+          });
+          return;
+        }
+        
+        items.push({
+          id: id++,
+          name: item.name,
+          price: item.price,
+          category: displayCategory,
+          image: '',
+          desc: item.description || `Delicious ${item.name.toLowerCase()} prepared with authentic Kerala spices and traditional cooking methods.`,
+        });
+      });
+    });
+    
+    return items;
+  };
+
   // Load featured items
   useEffect(() => {
     const loadFeaturedItems = async () => {
       try {
-        const menuItems = await loadMenuItems();
+        // Initialize menu items (loads from storage or initializes with defaults)
+        const defaultItems = transformMenuData();
+        const menuItems = await initializeMenuItems(defaultItems);
         const featured = menuItems
           .filter(item => item.featured === true)
           .map(item => {
