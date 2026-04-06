@@ -46,8 +46,9 @@ export default function Footer() {
                         <p>378a Ferry Road</p>
                         <p>Woolston, Christchurch</p>
                         <p>New Zealand</p>
-                        <p className={styles.contactItem}>Draft Phone: +64 3 123 4567</p>
-                        <p className={styles.contactItem}>Email: hello@adipoliaffairs.nz</p>
+                        <p className={styles.contactItem}>Mobile: 022 634 0628</p>
+                        <p className={styles.contactItem}>Landline: +64 3 926 3805</p>
+                        <p className={styles.contactItem}>Email: indianfusionck@gmail.com</p>
                     </address>
                     <div className={styles.hours}>
                         <p><strong>Opening Hours:</strong></p>

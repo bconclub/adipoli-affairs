@@ -103,7 +103,11 @@ export default function Contact() {
                         <div className={styles.contactInfo}>
                             <p>
                                 <Phone size={18} className={styles.infoIcon} />
-                                <a href="tel:0226340628">022 634 0628</a>
+                                <a href="tel:0226340628">Mobile: 022 634 0628</a>
+                            </p>
+                            <p>
+                                <Phone size={18} className={styles.infoIcon} />
+                                <a href="tel:+6439263805">Landline: +64 3 926 3805</a>
                             </p>
                             <p>
                                 <MessageCircle size={18} className={styles.infoIcon} />

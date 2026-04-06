@@ -312,9 +312,16 @@ Thank you for your inquiry!`;
                     <div className={styles.contactCards}>
                         <div className={styles.contactCard}>
                             <Phone size={32} />
-                            <h3>Phone</h3>
+                            <h3>Mobile</h3>
                             <a href="tel:0226340628" className={styles.contactLink}>
                                 022 634 0628
+                            </a>
+                        </div>
+                        <div className={styles.contactCard}>
+                            <Phone size={32} />
+                            <h3>Landline</h3>
+                            <a href="tel:+6439263805" className={styles.contactLink}>
+                                +64 3 926 3805
                             </a>
                         </div>
                         <div className={styles.contactCard}>
