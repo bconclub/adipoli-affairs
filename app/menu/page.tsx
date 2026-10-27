@@ -45,22 +45,15 @@ const CATEGORY_MAP: Record<string, string> = {
 
 const CATEGORIES = [
     "All", 
-    "Soups", 
-    "Starters", 
     "South Specials", 
     "Breads", 
     "Biryani", 
     "Combo Specials", 
     "Kerala Meals",
     "Main Course",
-    "Indo-Chinese",
-    "Fried Rice",
-    "Noodles",
-    "Salad",
     "Kids Corner",
     "Desserts",
     "Sides",
-    "Snacks",
     "Hot Drinks",
     "Cool Drinks",
     "Juice",
@@ -111,9 +104,6 @@ const transformMenuData = (): MenuItem[] => {
     const timeRestrictionsByCategory: Record<string, TimeRestriction> = {
         "Idly & DOSA": { start: "12:00", end: "17:00" }, // South Specials: 12pm-5pm
         "Kerala Meals (12pm to 3pm)": { start: "12:00", end: "15:00" }, // Kerala Meals: 12pm-3pm
-        "SNACKS": { start: "16:00", end: "22:00" }, // Snacks: 4pm-10pm
-        "INDO CHINESE - VEG": { start: "17:00", end: "22:00" }, // Indo-Chinese: 5pm-10pm
-        "INDO CHINESE - NON VEG": { start: "17:00", end: "22:00" }, // Indo-Chinese: 5pm-10pm
     };
     
     menuData.forEach(category => {

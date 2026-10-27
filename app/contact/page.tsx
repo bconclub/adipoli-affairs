@@ -84,8 +84,8 @@ export default function Contact() {
                         <h2>Opening Hours</h2>
                         <div className={styles.hours}>
                             <p>
-                                <span className={styles.day}>Monday - Sunday:</span>
-                                <span className={styles.time}>12pm - 10pm</span>
+                                <span className={styles.day}>Mon, Wed - Sun:</span>
+                                <span className={styles.time}>12pm - 9pm</span>
                             </p>
                             <p>
                                 <span className={styles.day}>Tuesday:</span>

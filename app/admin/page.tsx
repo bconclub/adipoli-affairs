@@ -57,11 +57,9 @@ const CATEGORY_MAP: Record<string, string> = {
 };
 
 const CATEGORIES = [
-    "Soups", "Starters", "South Specials", "Breads", "Biryani", 
-    "Combo Specials", "Kerala Meals", "Main Course", "Indo-Chinese",
-    "Fried Rice", "Noodles", "Salad", "Kids Corner", "Desserts",
-    "Sides", "Snacks", "Hot Drinks", "Cool Drinks", "Juice",
-    "Milkshake"
+    "South Specials", "Breads", "Biryani", "Combo Specials",
+    "Kerala Meals", "Main Course", "Kids Corner", "Desserts",
+    "Sides", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"
 ];
 
 // Placeholder SVG for missing images

@@ -11,32 +11,6 @@ export interface MenuCategory {
 
 export const menuData: MenuCategory[] = [
   {
-    name: "SOUP",
-    items: [
-      { name: "Nadan Mutton Soup", price: 11.99, description: "Mutton is simmered with onions, garlic, ginger, and spices in water until tender. The soup is strained, seasoned with salt and coriander, and served hot." },
-      { name: "Nadan Chicken Soup", price: 10.99, description: "Chicken is boiled with aromatic spices and vegetables. The broth is clarified, seasoned, and served piping hot." },
-      { name: "Sweetcorn Veg Soup", price: 8.99, description: "Vegetables are boiled in stock, then thickened with cornflour slurry. Seasoned with salt, pepper, and a touch of butter." },
-      { name: "Sweetcorn Chicken Soup", price: 10.99, description: "Chicken is boiled with aromatic spices and vegetables. The broth is clarified, seasoned, and served piping hot." },
-      { name: "Clear Veg Soup", price: 8.99, description: "Vegetables are boiled in stock until tender. Salt and pepper are added, and the soup is garnished with chopped spring onions." },
-      { name: "Clear Chicken Soup", price: 10.99, description: "Chicken is boiled with aromatic spices and vegetables. The broth is clarified, seasoned, and served piping hot." },
-    ],
-  },
-  {
-    name: "STARTERS",
-    items: [
-      { name: "Beef dry fry (BDF)", price: 13.99, description: "Beef is marinated with spices, sautéed with onions, garlic, ginger, green chilies, and curry leaves until dry and flavorful." },
-      { name: "Chicken 65", price: 12.99, description: "Chicken is marinated in yogurt and spices, then deep-fried until crispy and golden, tossed with curry leaves and green chilies." },
-      { name: "Kerala prawns fry", price: 14.99, description: "Prawns are marinated with spices and turmeric, then shallow-fried with onions, garlic, and curry leaves until cooked and aromatic." },
-      { name: "Squid rings", price: 12.99, description: "Squid rings are coated with spices and lightly fried until tender, seasoned with garlic, ginger, and lemon juice." },
-      { name: "Dragon beef", price: 14.99, description: "Beef is stir-fried with garlic, ginger, bell peppers, chilies, and sauces (soy, chili, vinegar) for a spicy Indo-Chinese flavor." },
-      { name: "Inji puli chicken", price: 14.99, description: "Chicken is cooked with ginger, tamarind, and traditional Kerala spices until tender and tangy." },
-      { name: "Mushroom 65", price: 11.99, description: "Mushrooms are marinated with spices and yogurt, deep-fried until crisp, and garnished with curry leaves." },
-      { name: "Gobi 65", price: 11.99, description: "Cauliflower florets are marinated with spices and yogurt, deep-fried until golden, and tossed with curry leaves." },
-      { name: "Honey chilly potato", price: 10.99, description: "Boiled potato sticks are stir-fried with garlic, ginger, green chilies, and coated with a sweet and spicy honey sauce." },
-      { name: "Kung pao paneer", price: 13.99, description: "Paneer cubes are stir-fried with bell peppers, garlic, ginger, chilies, and a tangy soy-based sauce." },
-    ],
-  },
-  {
     name: "Idly & DOSA",
     items: [
       { name: "Idly (3pcs)", price: 10.99, description: "Fermented rice and urad dal batter is steamed in molds until soft and fluffy." },
@@ -69,7 +43,6 @@ export const menuData: MenuCategory[] = [
       { name: "Nool paratha", price: 5, description: "Thin wheat dough is rolled, coiled into threads, and cooked on a hot griddle with oil until lightly browned." },
       { name: "Puttu", price: 6, description: "Rice flour and grated coconut are layered in a cylindrical mold and steamed until cooked." },
       { name: "Chappathi", price: 3, description: "Whole wheat dough is rolled into flat circles and cooked on a hot tawa until lightly browned on both sides." },
-      { name: "Idiyappam (4pcs)", price: 8, description: "Rice flour dough is pressed into thin noodles, steamed in molds, and served soft." },
     ],
   },
   {
@@ -117,14 +90,12 @@ export const menuData: MenuCategory[] = [
     items: [
       { name: "Paneer butter masala", price: 15.99, description: "Paneer cubes are cooked in a creamy tomato-onion gravy with butter, cream, cashew paste, and mild spices. Complimentary rice not included." },
       { name: "Paneer kadai", price: 15.99, description: "Paneer is sautéed with onions, capsicum, tomatoes, garlic, ginger, and Kadai masala until well coated. Complimentary rice not included." },
-      { name: "Aloo gobi", price: 14.99, description: "Potatoes and cauliflower are stir-fried with onions, garlic, ginger, green chilies, turmeric, and spices until cooked. Complimentary rice not included." },
       { name: "Kadai Mushroom", price: 15.99, description: "Mushrooms are sautéed with onions, capsicum, tomatoes, garlic, ginger, and Kadai masala for a flavorful dish. Complimentary rice not included." },
-      { name: "Veg kuruma", price: 14.99, description: "Mixed vegetables are cooked in a coconut-based spiced gravy until tender and aromatic. Complimentary rice not included." },
       { name: "Veg stew", price: 15.99, description: "Mixed vegetables are simmered in coconut milk with ginger, green chilies, curry leaves, and pepper. Complimentary rice not included." },
-      { name: "Dal fry", price: 13.99, description: "Cooked lentils are sautéed with onions, garlic, ginger, tomatoes, turmeric, and spices for a rich, flavorful dal. Complimentary rice not included." },
       { name: "Kadala curry", price: 14.99, description: "Black chickpeas are cooked with onions, garlic, ginger, coconut paste, and spices until thick and flavorful. Complimentary rice not included." },
       { name: "Channa masala", price: 14.99, description: "Chickpeas are simmered in onion-tomato gravy with garlic, ginger, turmeric, red chili, and garam masala. Complimentary rice not included." },
       { name: "Green peas curry", price: 14.99, description: "Green peas are cooked in a mild onion-tomato coconut gravy with spices until soft and flavorful. Complimentary rice not included." },
+      { name: "Gobi 65", price: 11.99, description: "Cauliflower florets are marinated with spices and yogurt, deep-fried until golden, and tossed with curry leaves." },
     ],
   },
   {
@@ -145,11 +116,11 @@ export const menuData: MenuCategory[] = [
       { name: "Pepper chicken masala", price: 18.99, description: "Chicken is cooked with black pepper, onions, garlic, ginger, and curry leaves for a peppery, aromatic curry. Complimentary rice not included." },
       { name: "Chicken roast", price: 20.99, description: "Chicken pieces are roasted in a spiced onion-tomato gravy until tender and slightly dry. Complimentary rice not included." },
       { name: "Chicken stew", price: 19.99, description: "Chicken is simmered in coconut milk with onions, ginger, green chilies, and curry leaves for a mild, fragrant stew. Complimentary rice not included." },
-      { name: "Chicken kuruma", price: 18.99, description: "Chicken is cooked in a creamy tomato-butter gravy with mild spices and finished with cream. Complimentary rice not included." },
       { name: "Butter chicken", price: 18.99, description: "Chicken is cooked in a creamy tomato-butter gravy with mild spices and finished with cream. Complimentary rice not included." },
       { name: "Vizhinjam chicken fry (Bone-in) half", price: 16.99, description: "Chicken is marinated with spices, then shallow-fried with onions, curry leaves, and green chilies until crispy. Complimentary rice not included." },
       { name: "Vizhinjam chicken fry (Bone-in) full", price: 29.99, description: "Chicken is marinated with spices, then shallow-fried with onions, curry leaves, and green chilies until crispy. Complimentary rice not included." },
       { name: "Payyoli chicken fry", price: 18.99, description: "Chicken is marinated with spices and shallow-fried with onions and curry leaves until golden and aromatic. Complimentary rice not included." },
+      { name: "Chicken 65", price: 12.99, description: "Chicken is marinated in yogurt and spices, then deep-fried until crispy and golden, tossed with curry leaves and green chilies." },
     ],
   },
   {
@@ -163,6 +134,7 @@ export const menuData: MenuCategory[] = [
       { name: "Beef pollichathu", price: 22.99, description: "Beef is marinated in spices, wrapped in banana leaves, and pan-fried for a smoky, flavorful dish." },
       { name: "Beef roast", price: 20.99, description: "Beef pieces are cooked in a thick onion-tomato-spice gravy until tender and slightly dry." },
       { name: "Beef pepper masala", price: 19.99, description: "Beef is cooked with black pepper, onions, garlic, ginger, and curry leaves for a peppery and spicy flavor." },
+      { name: "Beef dry fry (BDF)", price: 13.99, description: "Beef is marinated with spices, sautéed with onions, garlic, ginger, green chilies, and curry leaves until dry and flavorful." },
     ],
   },
   {
@@ -183,7 +155,6 @@ export const menuData: MenuCategory[] = [
       { name: "Travankoor fish curry", price: 21.99, description: "Fish is simmered in a coconut-based curry with onions, garlic, ginger, turmeric, and green chilies." },
       { name: "Angamali fish mango curry", price: 22.99, description: "Fish is cooked with raw mango, onions, garlic, ginger, and spices for a tangy, flavorful curry." },
       { name: "Fish molee", price: 22.99, description: "Fish is simmered in a lightly spiced coconut milk gravy with onions, ginger, garlic, and green chilies." },
-      { name: "Fish nirvana", price: 24.99, description: "Fish is cooked with a blend of Kerala spices, coconut paste, and onions for a rich and aromatic curry." },
       { name: "Meen pollichathu (Bone-in)", price: 26.99, description: "Fish is marinated in spices, wrapped in banana leaves, and pan-fried to give a smoky, aromatic flavor." },
     ],
   },
@@ -195,7 +166,7 @@ export const menuData: MenuCategory[] = [
       { name: "Prawns roast", price: 22.99, description: "Prawns are sautéed with onions, garlic, ginger, curry leaves, and spices until slightly dry and aromatic." },
       { name: "Travankoor prawns curry", price: 21.99, description: "Prawns are cooked with raw mango, onions, garlic, ginger, and Kerala spices for a tangy and flavorful curry." },
       { name: "Prawns kanthari", price: 23.99, description: "Prawns are cooked with green chilies, onions, garlic, ginger, and Kerala spices for a hot, flavorful curry." },
-      { name: "Venad pal konju", price: 25.99, description: "Prawns are cooked with coconut milk, onion, garlic, ginger, and spices, giving a creamy, rich and aromatic curry." },
+      { name: "Kerala prawns fry", price: 14.99, description: "Prawns are marinated with spices and turmeric, then shallow-fried with onions, garlic, and curry leaves until cooked and aromatic." },
     ],
   },
   {
@@ -208,59 +179,11 @@ export const menuData: MenuCategory[] = [
     ],
   },
   {
-    name: "INDO CHINESE - VEG",
-    items: [
-      { name: "Chilly paneer", price: 16.99, description: "Paneer cubes are stir-fried with onions, capsicum, garlic, ginger, soy sauce, and chili sauce." },
-      { name: "Chilly mushroom", price: 16.99, description: "Mushrooms are stir-fried with onions, capsicum, garlic, ginger, soy sauce, and chili sauce." },
-      { name: "Chilly gobi", price: 16.99, description: "Cauliflower florets are battered, fried, and stir-fried with onions, capsicum, garlic, ginger, soy sauce, and chili sauce." },
-      { name: "Gobi manchurian", price: 16.99, description: "Cauliflower florets are deep-fried, then tossed in a spicy Indo-Chinese sauce with garlic, ginger, and soy sauce." },
-      { name: "Mushroom manchurian", price: 16.99, description: "Fried mushroom pieces are coated with garlic-ginger soy sauce and cooked in a tangy, spicy Manchurian sauce." },
-      { name: "Paneer manchurian", price: 16.99, description: "Fried paneer cubes are tossed in a tangy, spicy Indo-Chinese sauce with garlic, ginger, and soy sauce." },
-    ],
-  },
-  {
-    name: "INDO CHINESE - NON VEG",
-    items: [
-      { name: "Chilly chicken", price: 18.99, description: "Chicken pieces are deep-fried, then stir-fried with onions, capsicum, garlic, ginger, and chili sauce." },
-      { name: "Chicken manchurian", price: 18.99, description: "Fried chicken pieces are tossed in a tangy, spicy Manchurian sauce with garlic, ginger, and soy sauce." },
-      { name: "Garlic chicken", price: 18.99, description: "Chicken is stir-fried with garlic, ginger, and light soy-based sauce." },
-      { name: "Ginger chicken", price: 18.99, description: "Chicken is cooked with julienned ginger, onions, garlic, and light soy sauce." },
-      { name: "Chilly beef", price: 19.99, description: "Beef strips are stir-fried with onions, capsicum, garlic, ginger, and chili sauce for a spicy flavor." },
-      { name: "Chilly prawns", price: 21.99, description: "Prawns are stir-fried with onions, capsicum, garlic, ginger, and chili sauce for a spicy, aromatic dish." },
-    ],
-  },
-  {
-    name: "Fried RICE",
-    items: [
-      { name: "Veg fried rice", price: 15.99, description: "Cooked rice is stir-fried with mixed vegetables, soy sauce, garlic, ginger, and light spices." },
-      { name: "Chicken fried rice", price: 17.99, description: "Cooked rice is stir-fried with chicken, vegetables, soy sauce, garlic, and ginger for a flavorful dish." },
-      { name: "Sea food fried rice", price: 19.99, description: "Cooked rice is stir-fried with mixed seafood, vegetables, garlic, ginger, and sauces for a rich Indo-Chinese flavor." },
-      { name: "Mixed fried rice", price: 21.99, description: "Cooked rice is stir-fried with chicken, seafood, vegetables, garlic, ginger, and sauces for a mixed flavor." },
-    ],
-  },
-  {
-    name: "NOODLES",
-    items: [
-      { name: "Veg noodles", price: 16.99, description: "Noodles are stir-fried with vegetables, soy sauce, garlic, ginger, and mild spices." },
-      { name: "Chicken noodle", price: 18.99, description: "Noodles are stir-fried with chicken, vegetables, soy sauce, garlic, and ginger." },
-      { name: "Seafood noodles", price: 20.99, description: "Noodles are stir-fried with mixed seafood, vegetables, garlic, ginger, and sauces for a flavorful dish." },
-      { name: "Mixed noodles", price: 22.99, description: "Noodles are stir-fried with chicken, seafood, vegetables, and sauces for a rich Indo-Chinese flavor." },
-    ],
-  },
-  {
-    name: "SALAD",
-    items: [
-      { name: "Green Salad", price: 11.99, description: "Fresh lettuce, cucumber, tomato, carrots, and onion tossed with light dressing." },
-      { name: "Kerala Mix Salad", price: 12.99, description: "Fresh vegetables mixed with grated coconut, lemon juice, and mild spices." },
-    ],
-  },
-  {
     name: "Kids corner",
     items: [
       { name: "French fries", price: 7.99, description: "Potato strips deep-fried until golden and crispy." },
       { name: "Onion rings", price: 6.99, description: "Onion slices dipped in batter and deep-fried until crispy." },
       { name: "Chicken nuggets", price: 9.99, description: "Chicken pieces coated with breading and deep-fried until golden." },
-      { name: "Parotta burger", price: 11.99, description: "Soft parotta layered with spiced chicken patty, lettuce, and sauces." },
       { name: "Chicken Momos", price: 10.99, description: "Minced chicken wrapped in dough and steamed or pan-fried." },
     ],
   },
@@ -278,24 +201,12 @@ export const menuData: MenuCategory[] = [
     items: [
       { name: "Biriyani rice", price: 10.99, description: "Steamed basmati rice cooked with ghee and lightly spiced." },
       { name: "Plain rice", price: 6.99, description: "Steamed rice without added flavors." },
-      { name: "Ghee rice", price: 11.99, description: "Steamed rice tempered with ghee, fried onions, and mild spices." },
       { name: "Chutney (coconut & tomato)", price: 1.99, description: "Ground coconut or tomato blended with mild spices." },
       { name: "Sambar", price: 7.99, description: "Lentils cooked with tamarind and vegetables in South Indian spices." },
       { name: "Pappad (2pcs)", price: 1.99, description: "Thin lentil wafers roasted or fried until crisp." },
       { name: "Pickle", price: 0.99, description: "Spicy, tangy vegetable or mango pickle." },
       { name: "Boiled egg", price: 1.99, description: "Eggs boiled until firm." },
       { name: "Raitha", price: 3.99, description: "Yogurt mixed with cucumber, onions, or vegetables and mild spices." },
-    ],
-  },
-  {
-    name: "SNACKS",
-    items: [
-      { name: "Puffs (chicken)", price: 4.99, description: "Puff pastry filled with spiced chicken mixture, baked until golden." },
-      { name: "Puffs (egg)", price: 3.99, description: "Puff pastry filled with spiced egg mixture, baked until golden." },
-      { name: "Cutlet (chicken)", price: 4.99, description: "Minced chicken mixed with spices, shaped into cutlets, and deep-fried." },
-      { name: "Cutlet (beef)", price: 5.99, description: "Minced beef mixed with spices, shaped into cutlets, and deep-fried." },
-      { name: "Roll (chicken)", price: 6.99, description: "Spiced chicken wrapped in thin dough or parotta and fried." },
-      { name: "Roll (beef)", price: 7.99, description: "Spiced beef wrapped in thin dough or parotta and fried." },
     ],
   },
   {

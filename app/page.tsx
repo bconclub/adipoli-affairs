@@ -427,7 +427,7 @@ export default function Home() {
               margin: 0, 
               fontSize: isMobile ? '0.85rem' : '0.9rem',
               lineHeight: 1.4
-            }}>Mon, Wed-Sun: 12pm - 10pm</p>
+            }}>Mon, Wed-Sun: 12pm - 9pm</p>
             <p style={{ 
               margin: '0.25rem 0 0 0', 
               fontSize: isMobile ? '0.85rem' : '0.9rem', 
