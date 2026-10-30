@@ -43,22 +43,19 @@ const CATEGORY_MAP: Record<string, string> = {
     "MILK SHAKE": "Milkshake",
 };
 
-const CATEGORIES = [
-    "All", 
-    "South Specials", 
-    "Breads", 
-    "Biryani", 
-    "Combo Specials", 
-    "Kerala Meals",
-    "Main Course",
-    "Kids Corner",
-    "Desserts",
-    "Sides",
-    "Hot Drinks",
-    "Cool Drinks",
-    "Juice",
-    "Milkshake",
+// Menu sections, in the order they appear on the page
+const MENU_GROUPS = [
+    { title: "Lunch Menu", categories: ["Kerala Meals", "South Specials", "Combo Specials", "Biryani"] },
+    { title: "Dinner Menu", categories: ["Breads", "Main Course", "Sides"] },
+    { title: "All Day Menu", categories: ["Kids Corner", "Desserts", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"] },
 ];
+
+const CATEGORIES = ["All", ...MENU_GROUPS.flatMap(group => group.categories)];
+
+// Category headings that show more than the category name
+const CATEGORY_HEADINGS: Record<string, string> = {
+    "Kerala Meals": "Kerala Meals (12pm to 3pm)",
+};
 
 // Sanitize name for file path (same as upload API)
 const sanitizeName = (name: string | undefined | null): string => {
@@ -425,7 +422,14 @@ export default function MenuPage() {
             {filteredItems.length > 0 ? (
                 activeCategory === "All" && selectedCategories.length === 0 && searchQuery === "" ? (
                     // Show all categories as carousels
-                    Object.entries(itemsByCategory).map(([category, items]) => (
+                    MENU_GROUPS.filter(group => group.categories.some(category => itemsByCategory[category])).map(group => (
+                    <div key={group.title}>
+                        <h2 className="text-primary" style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>
+                            {group.title}
+                        </h2>
+                    {group.categories.filter(category => itemsByCategory[category]).map(category => {
+                        const items = itemsByCategory[category];
+                        return (
                         <section key={category} style={{ marginBottom: '4rem' }}>
                             <div style={{ 
                                 display: 'flex', 
@@ -433,9 +437,9 @@ export default function MenuPage() {
                                 alignItems: 'center',
                                 marginBottom: '1.5rem'
                             }}>
-                                <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
-                                    {category}
-                                </h2>
+                                <h3 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+                                    {CATEGORY_HEADINGS[category] || category}
+                                </h3>
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button
                                         onClick={() => scrollCategory(category, 'left')}
@@ -658,6 +662,9 @@ export default function MenuPage() {
                                 })}
                             </div>
                         </section>
+                        );
+                    })}
+                    </div>
                     ))
                 ) : (
                     // Show filtered items in grid
