@@ -25,7 +25,58 @@ export interface FeaturedItem {
     menuItemId?: number; // Link to menu item if applicable
 }
 
+// Menu sections, in the order they appear on the menu page, admin and print menu
+export const MENU_GROUPS = [
+    { title: "Lunch Menu", categories: ["Kerala Meals", "South Specials", "Combo Specials", "Biryani"] },
+    { title: "Dinner Menu", categories: ["Breads", "Main Course", "Sides"] },
+    { title: "All Day Menu", categories: ["Kids Corner", "Desserts", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"] },
+];
+
+// Category headings that show more than the category name
+export const CATEGORY_HEADINGS: Record<string, string> = {
+    "Kerala Meals": "Kerala Meals (12pm to 3pm)",
+};
+
 const API_BASE = '/api';
+
+// Fired when the server rejects a save because the admin login has expired
+export const ADMIN_SESSION_EXPIRED_EVENT = 'admin-session-expired';
+
+const notifySessionExpired = () => {
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(ADMIN_SESSION_EXPIRED_EVENT));
+    }
+};
+
+// Admin login
+export async function checkAdminSession(): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_BASE}/session.php`);
+        if (!response.ok) return false;
+        const result = await response.json();
+        return result.authenticated === true;
+    } catch {
+        return false;
+    }
+}
+
+export async function adminLogin(password: string): Promise<'ok' | 'wrong-password' | 'error'> {
+    try {
+        const response = await fetch(`${API_BASE}/login.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+        });
+        if (response.ok) return 'ok';
+        return response.status === 401 ? 'wrong-password' : 'error';
+    } catch {
+        return 'error';
+    }
+}
+
+export async function adminLogout(): Promise<void> {
+    await fetch(`${API_BASE}/logout.php`, { method: 'POST' }).catch(() => undefined);
+}
 
 // Check if we're in development mode (no PHP server)
 const isDevelopment = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -123,7 +174,12 @@ export async function saveMenuItems(items: MenuItem[]): Promise<boolean> {
             });
             
             console.log('Response status:', response.status, response.statusText);
-            
+
+            if (response.status === 401) {
+                notifySessionExpired();
+                return false;
+            }
+
             if (response.ok) {
                 const result = await response.json();
                 console.log('Save successful:', result);
@@ -206,7 +262,12 @@ export async function saveFeaturedItems(items: FeaturedItem[]): Promise<boolean>
             },
             body: JSON.stringify({ items }),
         });
-        
+
+        if (response.status === 401) {
+            notifySessionExpired();
+            return false;
+        }
+
         if (!response.ok) {
             const error = await response.json();
             console.error('Failed to save featured items:', error);
@@ -368,9 +429,14 @@ export async function uploadImage(file: File, category: string, productName: str
             body: formData,
         });
         
+        if (response.status === 401) {
+            notifySessionExpired();
+            return null;
+        }
+
         if (!response.ok) {
             const responseText = await response.text();
-            
+
             // Check if response is HTML (404 page or error page)
             if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<!')) {
                 console.warn('API endpoint returned HTML (likely 404). Development mode detected.');

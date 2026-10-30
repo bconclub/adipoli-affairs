@@ -1,0 +1,185 @@
+.wrapper {
+    background: #d9d9d9;
+    color: #1f1410;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.loading {
+    padding: 2rem;
+    text-align: center;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    max-width: 210mm;
+    margin: 0 auto 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+}
+
+.toolbar p {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.toolbar .warning {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.printButton {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 8px;
+    background: #f27f24;
+    color: white;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.page {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 1rem;
+    padding: 14mm 15mm;
+    background: white;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.cover {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: #1a0f0a;
+    color: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.logo {
+    width: 120mm;
+    height: auto;
+}
+
+.cover h1 {
+    margin: 14mm 0;
+    font-size: 40pt;
+    font-weight: 700;
+    color: #f27f24;
+}
+
+.coverDetails p {
+    margin: 0.3rem 0;
+    font-size: 12pt;
+    color: #fff;
+}
+
+.coverDetails .coverGap {
+    margin-top: 8mm;
+}
+
+.pageHeading {
+    margin: 0 0 6mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 2px solid #f27f24;
+    font-size: 24pt;
+    font-weight: 700;
+    color: #f27f24;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.columns {
+    flex: 1;
+    min-height: 0;
+    column-count: 2;
+    column-gap: 10mm;
+    column-fill: auto;
+}
+
+.block {
+    break-inside: avoid;
+    margin-bottom: 6mm;
+}
+
+.block h3 {
+    margin: 0 0 2mm;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1f1410;
+}
+
+.note {
+    font-size: 9pt;
+    font-weight: 400;
+    color: #666;
+}
+
+.block ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.block li {
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: 0.8mm 0;
+    font-size: 10pt;
+    line-height: 1.25;
+    color: #1f1410;
+}
+
+.price {
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.footnote {
+    margin: 3mm 0 0;
+    font-size: 9pt;
+    color: #666;
+}
+
+@media screen and (max-width: 840px) {
+    .wrapper > div:last-child {
+        overflow-x: auto;
+    }
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+@media print {
+    .wrapper {
+        background: white;
+        padding: 0;
+    }
+
+    .toolbar {
+        display: none;
+    }
+
+    .page {
+        margin: 0;
+        break-after: page;
+    }
+
+    .page:last-child {
+        break-after: auto;
+    }
+}

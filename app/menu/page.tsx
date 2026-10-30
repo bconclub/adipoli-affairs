@@ -6,7 +6,7 @@ import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock, Star } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
-import { loadMenuItems, initializeMenuItems, type MenuItem as MenuItemType } from '@/lib/menuData';
+import { loadMenuItems, initializeMenuItems, MENU_GROUPS, CATEGORY_HEADINGS, type MenuItem as MenuItemType } from '@/lib/menuData';
 
 // Use the MenuItem type from menuData
 type MenuItem = MenuItemType;
@@ -43,19 +43,8 @@ const CATEGORY_MAP: Record<string, string> = {
     "MILK SHAKE": "Milkshake",
 };
 
-// Menu sections, in the order they appear on the page
-const MENU_GROUPS = [
-    { title: "Lunch Menu", categories: ["Kerala Meals", "South Specials", "Combo Specials", "Biryani"] },
-    { title: "Dinner Menu", categories: ["Breads", "Main Course", "Sides"] },
-    { title: "All Day Menu", categories: ["Kids Corner", "Desserts", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"] },
-];
-
 const CATEGORIES = ["All", ...MENU_GROUPS.flatMap(group => group.categories)];
 
-// Category headings that show more than the category name
-const CATEGORY_HEADINGS: Record<string, string> = {
-    "Kerala Meals": "Kerala Meals (12pm to 3pm)",
-};
 
 // Sanitize name for file path (same as upload API)
 const sanitizeName = (name: string | undefined | null): string => {

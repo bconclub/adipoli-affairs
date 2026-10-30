@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Edit2, X, Check, GripVertical, Star, Image as ImageIcon, Upload, Loader2, XCircle } from 'lucide-react';
+import { Save, Plus, Trash2, Edit2, X, Check, GripVertical, Star, Image as ImageIcon, Upload, Loader2, XCircle, LogOut, Printer, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { 
     loadMenuItems, 
@@ -11,6 +11,11 @@ import {
     deleteMenuItem,
     initializeMenuItems,
     uploadImage,
+    checkAdminSession,
+    adminLogin,
+    adminLogout,
+    MENU_GROUPS,
+    ADMIN_SESSION_EXPIRED_EVENT,
     type MenuItem
 } from '@/lib/menuData';
 import { menuData } from '@/data/menu';
@@ -56,11 +61,7 @@ const CATEGORY_MAP: Record<string, string> = {
     "MILK SHAKE": "Milkshake",
 };
 
-const CATEGORIES = [
-    "Kerala Meals", "South Specials", "Combo Specials", "Biryani",
-    "Breads", "Main Course", "Sides",
-    "Kids Corner", "Desserts", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"
-];
+const CATEGORIES = MENU_GROUPS.flatMap(group => group.categories);
 
 // Placeholder SVG for missing images
 const PLACEHOLDER_IMAGE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="#1a1a1a" width="400" height="240"/><g transform="translate(200,100)" fill="none" stroke="#555" stroke-width="2"><rect x="-30" y="-25" width="60" height="50" rx="4"/><circle cx="-15" cy="-10" r="5"/><polyline points="-25,20 -5,-5 10,10 25,-5 30,10"/></g><text x="200" y="160" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="14">Image coming soon</text></svg>`)}`;
@@ -143,22 +144,12 @@ const transformMenuData = (): MenuItem[] => {
     return items;
 };
 
-// SHA-256 hash of the admin password
-const ADMIN_PASSWORD_HASH = 'cf6cbd751dfc352c45cbef590f2222bef14c95bd0a6eb2ae40f5072c81afa3e2';
-
-async function hashPassword(password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 export default function AdminPanel() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const [activeTab, setActiveTab] = useState<'menu' | 'featured'>('menu');
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -170,25 +161,42 @@ export default function AdminPanel() {
     const [draggedItem, setDraggedItem] = useState<number | null>(null);
     const [draggedOver, setDraggedOver] = useState<number | null>(null);
 
-    // Check if already authenticated via sessionStorage
+    // Check if already logged in on the server
     useEffect(() => {
-        const auth = sessionStorage.getItem('admin_auth');
-        if (auth === 'true') {
-            setIsAuthenticated(true);
-        }
-        setIsCheckingAuth(false);
+        checkAdminSession().then(authenticated => {
+            setIsAuthenticated(authenticated);
+            setIsCheckingAuth(false);
+        });
     }, []);
+
+    // Send back to the login screen if the login expires mid-edit
+    useEffect(() => {
+        const handleExpired = () => {
+            setIsAuthenticated(false);
+            setLoginError('You were logged out. Please log in again, then redo your last change.');
+        };
+        window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, handleExpired);
+        return () => window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, handleExpired);
+    }, []);
+
+    // Hide the save message after a few seconds
+    useEffect(() => {
+        if (!notice) return;
+        const timer = setTimeout(() => setNotice(null), 4000);
+        return () => clearTimeout(timer);
+    }, [notice]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoginError('');
-        const hash = await hashPassword(password);
-        if (hash === ADMIN_PASSWORD_HASH) {
+        const result = await adminLogin(password);
+        setPassword('');
+        if (result === 'ok') {
             setIsAuthenticated(true);
-            sessionStorage.setItem('admin_auth', 'true');
-        } else {
+        } else if (result === 'wrong-password') {
             setLoginError('Incorrect password');
-            setPassword('');
+        } else {
+            setLoginError('Could not reach the server. Check your internet and try again.');
         }
     };
 
@@ -242,25 +250,57 @@ export default function AdminPanel() {
 
     const handleSaveMenuItem = async (itemData: Partial<MenuItem>) => {
         try {
-            if (editingItem) {
-                await updateMenuItem(editingItem.id, itemData);
-            } else {
-                await addMenuItem(itemData as Omit<MenuItem, 'id'>);
+            const saved = editingItem
+                ? await updateMenuItem(editingItem.id, itemData)
+                : await addMenuItem(itemData as Omit<MenuItem, 'id'>);
+            if (!saved) {
+                setNotice({ type: 'error', text: 'Not saved. Please try again.' });
+                return;
             }
             await loadData();
             setEditingItem(null);
             setIsAddingNew(false);
+            setNotice({ type: 'success', text: `${formatProductName(saved.name)} saved. It's live on the website.` });
         } catch (error) {
             console.error('Error saving menu item:', error);
-            alert('Failed to save menu item. Please check the console for details.');
+            setNotice({ type: 'error', text: 'Not saved. Please try again.' });
         }
     };
 
-    const handleDeleteMenuItem = async (id: number) => {
-        if (confirm('Are you sure you want to delete this item?')) {
-            await deleteMenuItem(id);
+    const handleDeleteMenuItem = async (item: MenuItem) => {
+        if (confirm(`Remove ${formatProductName(item.name)} from the menu?`)) {
+            const deleted = await deleteMenuItem(item.id);
             await loadData();
+            setNotice(deleted
+                ? { type: 'success', text: `${formatProductName(item.name)} removed from the menu.` }
+                : { type: 'error', text: 'Not removed. Please try again.' });
         }
+    };
+
+    const handleSavePrice = async (item: MenuItem, price: number): Promise<boolean> => {
+        const updated = await updateMenuItem(item.id, { price });
+        if (!updated) {
+            setNotice({ type: 'error', text: 'Price not saved. Please try again.' });
+            return false;
+        }
+        setMenuItems(items => items.map(i => i.id === item.id ? { ...i, price } : i));
+        setNotice({ type: 'success', text: `${formatProductName(item.name)} is now $${price.toFixed(2)} on the website.` });
+        return true;
+    };
+
+    const handleToggleFeatured = async (item: MenuItem) => {
+        const updated = await updateMenuItem(item.id, { featured: !item.featured });
+        if (!updated) {
+            setNotice({ type: 'error', text: 'Not saved. Please try again.' });
+            return;
+        }
+        setMenuItems(items => items.map(i => i.id === item.id ? { ...i, featured: !item.featured } : i));
+    };
+
+    const handleLogout = async () => {
+        await adminLogout();
+        setIsAuthenticated(false);
+        setLoginError('');
     };
 
     const filteredMenuItems = menuItems.filter(item => {
@@ -342,9 +382,45 @@ export default function AdminPanel() {
     return (
         <div className="container section" style={{ maxWidth: '1400px', margin: '0 auto' }}>
             <div style={{ marginBottom: '2rem' }}>
-                <h1 className="text-primary">Admin Panel</h1>
-                <p>Manage menu items and featured products</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h1 className="text-primary" style={{ margin: 0 }}>Admin Panel</h1>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <a href="/menu" target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <ExternalLink size={16} /> View menu
+                        </a>
+                        <a href="/print-menu" target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Printer size={16} /> Print menu
+                        </a>
+                        <button onClick={handleLogout} className="btn btn-outline" style={{ padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <LogOut size={16} /> Log out
+                        </button>
+                    </div>
+                </div>
+                <p style={{ marginTop: '0.75rem' }}>
+                    To change a price, type the new price next to the dish and press Save. Use Edit for the name, photo or description. Changes go live straight away.
+                </p>
             </div>
+
+            {/* Save message */}
+            {notice && (
+                <div role="status" style={{
+                    position: 'fixed',
+                    left: '50%',
+                    bottom: '1.5rem',
+                    transform: 'translateX(-50%)',
+                    zIndex: 1000,
+                    width: 'max-content',
+                    maxWidth: 'calc(100vw - 2rem)',
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontWeight: 600,
+                    background: notice.type === 'success' ? '#15803d' : '#b91c1c',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                }}>
+                    {notice.text}
+                </div>
+            )}
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)' }}>
@@ -443,45 +519,32 @@ export default function AdminPanel() {
                     </div>
 
                     {/* Menu Items List */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                        {filteredMenuItems.map(item => (
-                            <MenuItemCard
-                                key={item.id}
-                                item={item}
-                                onEdit={() => setEditingItem(item)}
-                                onDelete={() => handleDeleteMenuItem(item.id)}
-                                onToggleFeatured={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    try {
-                                        const currentFeatured = item.featured || false;
-                                        const newFeaturedStatus = !currentFeatured;
-                                        console.log(`Toggling featured for item ${item.id} (${item.name}) from ${currentFeatured} to ${newFeaturedStatus}`);
-                                        
-                                        // Update the item
-                                        const updated = await updateMenuItem(item.id, { featured: newFeaturedStatus });
-                                        
-                                        if (updated) {
-                                            console.log('Update successful, reloading data...');
-                                            // Reload data to get fresh state
-                                            await loadData();
-                                        } else {
-                                            console.error('Update returned null - checking why...');
-                                            // Try to get more details
-                                            const allItems = await loadMenuItems();
-                                            const foundItem = allItems.find(i => i.id === item.id);
-                                            console.log('Item after update attempt:', foundItem);
-                                            alert('Failed to update featured status. The item may not exist or the save operation failed. Check the console for details.');
-                                        }
-                                    } catch (error) {
-                                        console.error('Error toggling featured status:', error);
-                                        console.error('Error details:', error instanceof Error ? error.message : String(error));
-                                        alert(`Failed to update featured status: ${error instanceof Error ? error.message : String(error)}`);
-                                    }
-                                }}
-                            />
-                        ))}
-                    </div>
+                    {MENU_GROUPS.map(group => {
+                        const groupCategories = group.categories.filter(category => filteredMenuItems.some(item => item.category === category));
+                        if (groupCategories.length === 0) return null;
+                        return (
+                            <div key={group.title} style={{ marginBottom: '2.5rem' }}>
+                                <h2 className="text-primary" style={{ marginBottom: '1rem' }}>{group.title}</h2>
+                                {groupCategories.map(category => (
+                                    <div key={category} style={{ marginBottom: '1.5rem' }}>
+                                        <h3 style={{ marginBottom: '0.5rem' }}>{category}</h3>
+                                        <div className="glass" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                                            {filteredMenuItems.filter(item => item.category === category).map(item => (
+                                                <MenuItemRow
+                                                    key={item.id}
+                                                    item={item}
+                                                    onSavePrice={price => handleSavePrice(item, price)}
+                                                    onEdit={() => setEditingItem(item)}
+                                                    onDelete={() => handleDeleteMenuItem(item)}
+                                                    onToggleFeatured={() => handleToggleFeatured(item)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })}
 
                     {filteredMenuItems.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
@@ -875,54 +938,77 @@ export default function AdminPanel() {
 }
 
 // Menu Item Card Component
-function MenuItemCard({ item, onEdit, onDelete, onToggleFeatured }: { item: MenuItem; onEdit: () => void; onDelete: () => void; onToggleFeatured: (e: React.MouseEvent) => void }) {
-    const formatPrice = (price: number | { half?: number; full?: number }): string => {
-        if (typeof price === 'number') {
-            return `$${price.toFixed(2)}`;
-        }
-        if (price.half && price.full) {
-            return `$${price.half.toFixed(2)} / $${price.full.toFixed(2)}`;
-        }
-        return '';
+function MenuItemRow({ item, onSavePrice, onEdit, onDelete, onToggleFeatured }: {
+    item: MenuItem;
+    onSavePrice: (price: number) => Promise<boolean>;
+    onEdit: () => void;
+    onDelete: () => void;
+    onToggleFeatured: () => void;
+}) {
+    const currentPrice = typeof item.price === 'number' ? item.price : null;
+    const [priceText, setPriceText] = useState(currentPrice === null ? '' : currentPrice.toFixed(2));
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setPriceText(currentPrice === null ? '' : currentPrice.toFixed(2));
+    }, [currentPrice]);
+
+    const newPrice = Number(priceText);
+    const isValid = priceText.trim() !== '' && Number.isFinite(newPrice) && newPrice > 0;
+    const hasChanged = currentPrice !== null && isValid && newPrice !== currentPrice;
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!hasChanged || isSaving) return;
+        setIsSaving(true);
+        await onSavePrice(Math.round(newPrice * 100) / 100);
+        setIsSaving(false);
     };
 
+    const iconButton: React.CSSProperties = { padding: '0.5rem', minWidth: '40px', minHeight: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
+
     return (
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <h3 style={{ margin: 0 }}>{formatProductName(item.name)}</h3>
-                        {(item.featured === true) && <Star size={16} style={{ color: 'var(--primary)' }} fill="var(--primary)" />}
-                    </div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                        {item.category} • {formatPrice(item.price)}
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                        {item.desc.substring(0, 100)}...
-                    </p>
-                </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ flex: '1 1 220px', minWidth: 0, fontWeight: 500 }}>
+                {formatProductName(item.name)}
             </div>
+            <form onSubmit={handleSave} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {currentPrice === null ? (
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Use Edit for price</span>
+                ) : (
+                    <>
+                        <span aria-hidden="true">$</span>
+                        <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            value={priceText}
+                            onChange={(e) => setPriceText(e.target.value)}
+                            aria-label={`Price of ${formatProductName(item.name)}`}
+                            style={{ width: '90px', padding: '0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: `1px solid ${hasChanged ? 'var(--primary)' : 'rgba(255,255,255,0.2)'}`, color: 'white', fontSize: '16px' }}
+                        />
+                        <button type="submit" disabled={!hasChanged || isSaving} className={`btn ${hasChanged ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.5rem 0.9rem', minHeight: '40px', opacity: hasChanged ? 1 : 0.4, cursor: hasChanged ? 'pointer' : 'default' }}>
+                            {isSaving ? 'Saving' : 'Save'}
+                        </button>
+                    </>
+                )}
+            </form>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
+                <button
                     type="button"
-                    onClick={onToggleFeatured} 
-                    className="btn btn-outline" 
-                    style={{ 
-                        padding: '0.5rem', 
-                        color: (item.featured === true) ? 'var(--primary)' : 'var(--text-secondary)',
-                        borderColor: (item.featured === true) ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
-                        background: (item.featured === true) ? 'rgba(242, 127, 36, 0.1)' : 'transparent',
-                        cursor: 'pointer'
-                    }}
-                    title={(item.featured === true) ? 'Remove from featured' : 'Add to featured'}
+                    onClick={onToggleFeatured}
+                    className="btn btn-outline"
+                    style={{ ...iconButton, color: item.featured ? 'var(--primary)' : 'var(--text-secondary)', borderColor: item.featured ? 'var(--primary)' : 'rgba(255,255,255,0.2)' }}
+                    title={item.featured ? 'Remove from featured' : 'Add to featured'}
+                    aria-label={item.featured ? `Remove ${formatProductName(item.name)} from featured` : `Add ${formatProductName(item.name)} to featured`}
                 >
-                    <Star size={16} fill={(item.featured === true) ? 'var(--primary)' : 'none'} />
+                    <Star size={16} fill={item.featured ? 'var(--primary)' : 'none'} />
                 </button>
-                <button onClick={onEdit} className="btn btn-outline" style={{ flex: 1, padding: '0.5rem' }}>
-                    <Edit2 size={16} style={{ marginRight: '0.25rem' }} />
-                    Edit
+                <button type="button" onClick={onEdit} className="btn btn-outline" style={{ ...iconButton, padding: '0.5rem 0.9rem', gap: '0.25rem' }}>
+                    <Edit2 size={16} /> Edit
                 </button>
-                <button onClick={onDelete} className="btn btn-outline" style={{ padding: '0.5rem', color: '#ef4444', borderColor: '#ef4444' }}>
+                <button type="button" onClick={onDelete} className="btn btn-outline" style={{ ...iconButton, color: '#ef4444', borderColor: '#ef4444' }} title="Remove from menu" aria-label={`Remove ${formatProductName(item.name)} from menu`}>
                     <Trash2 size={16} />
                 </button>
             </div>

@@ -1,8 +1,6 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+require __DIR__ . '/_auth.php';
 
 // Enable error reporting for debugging (remove in production)
 error_reporting(E_ALL);
@@ -14,6 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
+
+require_admin();
 
 // Check if file was uploaded
 if (!isset($_FILES['image'])) {

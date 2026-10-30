@@ -29,6 +29,9 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Check PHP syntax
+        run: for f in public/api/*.php; do php -l "$f"; done
+
       - name: Verify .htaccess file
         run: |
           if [ -f "out/.htaccess" ]; then

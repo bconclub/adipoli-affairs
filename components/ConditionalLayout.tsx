@@ -13,8 +13,10 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const isTVPage = pathname === "/tv" || pathname === "/tv/";
+  const isPrintPage = pathname === "/print-menu" || pathname === "/print-menu/";
+  const isAdminPage = pathname === "/admin" || pathname === "/admin/";
 
-  if (isTVPage) {
+  if (isTVPage || isPrintPage) {
     return <>{children}</>;
   }
 
@@ -26,7 +28,7 @@ export default function ConditionalLayout({
       </main>
       <Footer />
       <Toast />
-      <FloatingCartButton />
+      {!isAdminPage && <FloatingCartButton />}
     </>
   );
 }
