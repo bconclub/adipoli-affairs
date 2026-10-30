@@ -28,6 +28,11 @@ RewriteCond %{REQUEST_URI} ^/tv/?$
 RewriteCond %{DOCUMENT_ROOT}/tv.html -f
 RewriteRule ^tv/?$ /tv.html [L]
 
+# Explicitly handle /print-menu route
+RewriteCond %{REQUEST_URI} ^/print-menu/?$
+RewriteCond %{DOCUMENT_ROOT}/print-menu.html -f
+RewriteRule ^print-menu/?$ /print-menu.html [L]
+
 # Handle Next.js static export routes - serve .html files without extension
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
