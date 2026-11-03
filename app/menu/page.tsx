@@ -6,7 +6,7 @@ import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock, Star } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
-import { loadMenuItems, initializeMenuItems, MENU_GROUPS, CATEGORY_HEADINGS, type MenuItem as MenuItemType } from '@/lib/menuData';
+import { loadMenuItems, initializeMenuItems, getItemImage, MENU_GROUPS, CATEGORY_HEADINGS, type MenuItem as MenuItemType } from '@/lib/menuData';
 
 // Use the MenuItem type from menuData
 type MenuItem = MenuItemType;
@@ -499,9 +499,7 @@ export default function MenuPage() {
                                 }}
                             >
                                 {items.map(item => {
-                                    const imagePath = item?.image?.startsWith('data:image/') 
-                                        ? item.image 
-                                        : (getImagePathFromPublic(item?.name, item?.category) || PLACEHOLDER_IMAGE);
+                                    const imagePath = getItemImage(item, PLACEHOLDER_IMAGE);
                                     
                                     const isAvailable = isItemAvailableNow(item.timeRestriction);
                                     const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
@@ -533,6 +531,8 @@ export default function MenuPage() {
                                                 overflow: 'hidden'
                                             }}>
                                                 <img
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     src={imagePath}
                                                     alt={item.name}
                                                     style={{
@@ -659,9 +659,7 @@ export default function MenuPage() {
                     // Show filtered items in grid
                     <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
                         {filteredItems.map(item => {
-                            const imagePath = item?.image?.startsWith('data:image/') 
-                                ? item.image 
-                                : (getImagePathFromPublic(item?.name, item?.category) || PLACEHOLDER_IMAGE);
+                            const imagePath = getItemImage(item, PLACEHOLDER_IMAGE);
                             
                             const isAvailable = isItemAvailableNow(item.timeRestriction);
                             const timeRange = item.timeRestriction ? formatTimeRestriction(item.timeRestriction) : '';
@@ -690,6 +688,8 @@ export default function MenuPage() {
                                         overflow: 'hidden'
                                     }}>
                                         <img
+                                            loading="lazy"
+                                            decoding="async"
                                             src={imagePath}
                                             alt={item.name}
                                             style={{

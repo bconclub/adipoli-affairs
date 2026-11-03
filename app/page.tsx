@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Star, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { initializeMenuItems, loadMenuItems, type MenuItem } from "@/lib/menuData";
+import { initializeMenuItems, loadMenuItems, getSignatureDishes, type MenuItem } from "@/lib/menuData";
 import { menuData } from "@/data/menu";
 
 interface FeaturedItem {
@@ -183,8 +183,7 @@ export default function Home() {
         // Initialize menu items (loads from storage or initializes with defaults)
         const defaultItems = transformMenuData();
         const menuItems = await initializeMenuItems(defaultItems);
-        const featured = menuItems
-          .filter(item => item.featured === true)
+        const featured = getSignatureDishes(menuItems)
           .map(item => {
             const priceStr = typeof item.price === 'number' 
               ? `$${item.price.toFixed(2)}`
@@ -537,6 +536,8 @@ export default function Home() {
                         borderRadius: '12px 12px 0 0'
                       }}>
                         <img
+                          loading="lazy"
+                          decoding="async"
                           src={item.image}
                           alt={item.name}
                           style={{
@@ -881,9 +882,9 @@ export default function Home() {
         ) : (
           <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-              No featured dishes available at the moment.
+              See all our dishes on the full menu.
             </p>
-            <Link href="/admin" className="btn btn-outline">Manage Featured Items</Link>
+            <Link href="/menu" className="btn btn-outline">View Full Menu</Link>
           </div>
         )}
       </section>

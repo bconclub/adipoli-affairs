@@ -152,17 +152,15 @@ if (!is_writable($categoryPath)) {
     exit;
 }
 
-// Generate filename
-$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-if (empty($extension)) {
-    $extension = 'jpg';
-}
+// Generate filename, taking the extension from the detected type so nothing runnable is saved
+$extensions = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+$extension = $extensions[$fileType];
 $filename = $sanitizedName . '.' . $extension;
 $filepath = $categoryPath . '/' . $filename;
 
-// Handle file name conflicts
+// Handle file name conflicts, including another photo's WebP copy
 $counter = 1;
-while (file_exists($filepath)) {
+while (file_exists($filepath) || file_exists($categoryPath . '/' . pathinfo($filename, PATHINFO_FILENAME) . '.webp')) {
     $filename = $sanitizedName . '-' . $counter . '.' . $extension;
     $filepath = $categoryPath . '/' . $filename;
     $counter++;
@@ -181,6 +179,20 @@ if (!move_uploaded_file($file['tmp_name'], $filepath)) {
         ]
     ]);
     exit;
+}
+
+// Save a smaller WebP copy next to it; .htaccess serves it to browsers that support WebP
+if ($extension !== 'webp' && function_exists('imagewebp') && function_exists('imagecreatefromstring')) {
+    $source = @imagecreatefromstring(file_get_contents($filepath));
+    if ($source) {
+        $maxWidth = 960;
+        $resized = imagesx($source) > $maxWidth
+            ? imagescale($source, $maxWidth, (int) round(imagesy($source) * $maxWidth / imagesx($source)))
+            : $source;
+        if ($resized) {
+            @imagewebp($resized, $categoryPath . '/' . pathinfo($filename, PATHINFO_FILENAME) . '.webp', 78);
+        }
+    }
 }
 
 // Return image path

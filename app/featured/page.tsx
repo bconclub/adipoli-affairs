@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Play, Pause, ChevronLeft, ChevronRight, Maximize, Minimize, Settings, X, RotateCcw, Clock
 } from "lucide-react";
-import { loadMenuItems, type MenuItem } from "@/lib/menuData";
+import { loadMenuItems, getSignatureDishes, type MenuItem } from "@/lib/menuData";
 import styles from "./Featured.module.css";
 
 interface FeaturedItem {
@@ -36,8 +36,7 @@ export default function FeaturedPage() {
             try {
                 const menuItems = await loadMenuItems();
                 console.log('Loaded menu items:', menuItems.length);
-                const featuredItems = menuItems
-                    .filter(item => item.featured === true)
+                const featuredItems = getSignatureDishes(menuItems)
                     .map(item => {
                         const priceStr = typeof item.price === 'number' 
                             ? `$${item.price.toFixed(2)}`
@@ -184,12 +183,12 @@ export default function FeaturedPage() {
         return (
             <div className={styles.container} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Featured Items</h1>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Specials</h1>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                        Please mark some menu items as featured in the admin panel.
+                        See all our dishes on the full menu.
                     </p>
-                    <Link href="/admin" className="btn btn-primary">
-                        Go to Admin Panel
+                    <Link href="/menu" className="btn btn-primary">
+                        View Full Menu
                     </Link>
                 </div>
             </div>

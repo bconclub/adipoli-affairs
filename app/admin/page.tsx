@@ -1111,7 +1111,7 @@ function MenuItemForm({
                     setFormData({ ...formData, image: imagePath });
                 }
             } else {
-                alert('Failed to upload image. Please try again.');
+                alert('The photo could not be uploaded. Check your internet and try again, or use a smaller photo.');
             }
             
             if (isFeatured) {
@@ -1125,7 +1125,7 @@ function MenuItemForm({
             }
         } catch (error) {
             console.error('Image upload error:', error);
-            alert('Failed to upload image. Please try again.');
+            alert('The photo could not be uploaded. Check your internet and try again, or use a smaller photo.');
             if (isFeatured) {
                 setIsUploadingFeatured(false);
                 setFeaturedImageToCrop(null);
@@ -1204,7 +1204,7 @@ function MenuItemForm({
                 </div>
 
                 <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Product Image *</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Photo</label>
                     
                     {/* Image Preview */}
                     <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -1283,37 +1283,6 @@ function MenuItemForm({
                         
                         <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.image}
-                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                        placeholder="/images/item.png"
-                                        style={{ 
-                                            width: '100%',
-                                            padding: '0.75rem', 
-                                            borderRadius: '8px', 
-                                            background: 'rgba(255,255,255,0.05)', 
-                                            border: '1px solid rgba(255,255,255,0.1)', 
-                                            color: 'white'
-                                        }}
-                                    />
-                                    {formData.image && (
-                                        <div style={{ 
-                                            fontSize: '0.85rem', 
-                                            color: 'var(--text-secondary)',
-                                            padding: '0.5rem',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            borderRadius: '6px',
-                                            wordBreak: 'break-all'
-                                        }}>
-                                            <strong style={{ color: 'var(--text-primary)' }}>Image:</strong> {
-                                                formData.image
-                                            }
-                                        </div>
-                                    )}
-                                </div>
                                 <label className="btn btn-outline" style={{ cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', opacity: isUploading ? 0.6 : 1 }}>
                                     {isUploading ? (
                                         <>
@@ -1323,7 +1292,7 @@ function MenuItemForm({
                                     ) : (
                                         <>
                                             <Upload size={18} />
-                                            Choose File
+                                            Choose photo
                                         </>
                                     )}
                                     <input
@@ -1348,34 +1317,8 @@ function MenuItemForm({
                                 </label>
                             </div>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
-                                Enter image path/URL or choose a file from your computer
+                                Choose a photo from your phone or computer and crop it. Then press Save Item to put it on the menu.
                             </p>
-                            
-                            {/* Quick Image Select */}
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Quick select:</span>
-                                {['/images/chicken.png', '/images/beef.png', '/images/biryani.png', '/images/hero.png'].map(img => (
-                                    <button
-                                        key={img}
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, image: img })}
-                                        style={{
-                                            position: 'relative',
-                                            width: '50px',
-                                            height: '50px',
-                                            borderRadius: '4px',
-                                            overflow: 'hidden',
-                                            border: formData.image === img ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.2)',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            cursor: 'pointer',
-                                            padding: 0
-                                        }}
-                                        title={img}
-                                    >
-                                        <Image src={img} alt="" fill style={{ objectFit: 'cover' }} />
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1454,7 +1397,8 @@ function MenuItemForm({
                     <label htmlFor="featured-check" style={{ cursor: 'pointer' }}>Featured Item</label>
                 </div>
 
-                {/* Featured Image Upload - Always show for editing */}
+                {/* Photo for the TV and specials screen, only needed for featured dishes */}
+                {formData.featured && (
                 <div style={{ gridColumn: '1 / -1', marginTop: '1.5rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                         Featured Image (for TV/Display) 
@@ -1599,6 +1543,7 @@ function MenuItemForm({
                             </div>
                         </div>
                     </div>
+                )}
             </div>
 
             <div>

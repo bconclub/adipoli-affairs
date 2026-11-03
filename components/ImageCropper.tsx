@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import { X, Check } from 'lucide-react';
 import { getCroppedImg } from '@/lib/imageCrop';
@@ -45,7 +46,7 @@ export default function ImageCropper({
         }
     }, [image, croppedAreaPixels, aspectRatio, onCropComplete]);
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
             top: 0,
@@ -158,6 +159,6 @@ export default function ImageCropper({
                 Crop to 16:9 aspect ratio. Drag to reposition, use zoom to adjust.
             </p>
         </div>
-    );
+    , document.body);
 }
 

@@ -37,6 +37,33 @@ export const CATEGORY_HEADINGS: Record<string, string> = {
     "Kerala Meals": "Kerala Meals (12pm to 3pm)",
 };
 
+// Shown as signature dishes until the restaurant stars some in the admin panel
+const DEFAULT_SIGNATURE_DISHES = [
+    "Chatti biriyani beef",
+    "Vizhinjam Chicken Fry (Bone-in) full",
+    "Beef roast",
+    "Masala dosa",
+    "Pothichoru",
+    "Kappa fish",
+];
+
+export function getSignatureDishes(items: MenuItem[]): MenuItem[] {
+    const featured = items.filter(item => item.featured === true);
+    if (featured.length > 0) return featured;
+    return DEFAULT_SIGNATURE_DISHES
+        .map(name => items.find(item => item.name.toLowerCase() === name.toLowerCase()))
+        .filter((item): item is MenuItem => item !== undefined);
+}
+
+// Photo for a dish: the one saved in admin, or one named after the dish
+export function getItemImage(item: Pick<MenuItem, 'name' | 'category' | 'image'>, fallback: string): string {
+    if (item.image && (item.image.startsWith('/') || item.image.startsWith('http') || item.image.startsWith('data:image/')) && item.image !== '/images/hero.png') {
+        return item.image;
+    }
+    const slug = (text: string) => (text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return item.name && item.category ? `/images/${slug(item.category)}/${slug(item.name)}.png` : fallback;
+}
+
 const API_BASE = '/api';
 
 // Fired when the server rejects a save because the admin login has expired
