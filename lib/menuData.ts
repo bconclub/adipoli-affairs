@@ -12,6 +12,45 @@ export interface MenuItem {
     featured?: boolean;
     featuredImage?: string; // Optional featured image for TV/display boards
     timeRestriction?: TimeRestriction; // Optional time restriction for menu availability
+    diet?: DishType[]; // Set in admin; worked out from the name when missing
+}
+
+export type DishType = 'veg' | 'egg' | 'chicken' | 'beef' | 'mutton' | 'seafood';
+
+// Dish types for the menu switcher and card badges, in the order they are shown
+export const DISH_TYPES: { id: DishType; label: string; color: string }[] = [
+    { id: 'veg', label: 'Veg', color: '#16a34a' },
+    { id: 'egg', label: 'Egg', color: '#eab308' },
+    { id: 'chicken', label: 'Chicken', color: '#dc2626' },
+    { id: 'beef', label: 'Beef', color: '#dc2626' },
+    { id: 'mutton', label: 'Mutton', color: '#dc2626' },
+    { id: 'seafood', label: 'Seafood', color: '#dc2626' },
+];
+
+// Meals whose names don't say what's in them
+const DISH_TYPE_OVERRIDES: Record<string, DishType[]> = {
+    'pothichoru': ['seafood', 'egg'],
+    'chatti choru': ['seafood', 'chicken', 'egg'],
+};
+
+// Checked in this order, so "Chicken masala dosa" is chicken and "Egg biryani" is egg
+const DISH_TYPE_WORDS: [DishType, string[]][] = [
+    ['seafood', ['fish', 'prawn', 'squid', 'kalamari', 'calamari', 'meen', 'sea food', 'seafood', 'konju', 'crab']],
+    ['mutton', ['mutton', 'goat', 'lamb']],
+    ['beef', ['beef', 'bdf']],
+    ['chicken', ['chicken', 'nugget', 'momos']],
+    ['egg', ['egg', 'omlet', 'omelette']],
+];
+
+export function inferDishTypes(name: string): DishType[] {
+    const lowerName = name.toLowerCase().trim();
+    if (DISH_TYPE_OVERRIDES[lowerName]) return DISH_TYPE_OVERRIDES[lowerName];
+    const match = DISH_TYPE_WORDS.find(([, words]) => words.some(word => lowerName.includes(word)));
+    return [match ? match[0] : 'veg'];
+}
+
+export function getDishTypes(item: Pick<MenuItem, 'name' | 'diet'>): DishType[] {
+    return item.diet && item.diet.length > 0 ? item.diet : inferDishTypes(item.name);
 }
 
 export interface FeaturedItem {

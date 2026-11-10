@@ -16,6 +16,10 @@ import {
     adminLogout,
     MENU_GROUPS,
     ADMIN_SESSION_EXPIRED_EVENT,
+    DISH_TYPES,
+    getDishTypes,
+    inferDishTypes,
+    type DishType,
     type MenuItem
 } from '@/lib/menuData';
 import { menuData } from '@/data/menu';
@@ -1039,6 +1043,7 @@ function MenuItemForm({
         priceFull: typeof item?.price === 'object' ? item.price.full : undefined,
         featured: item?.featured || false,
         featuredImage: item?.featuredImage || '',
+        diet: (item ? getDishTypes(item) : []) as DishType[],
     });
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
@@ -1063,6 +1068,7 @@ function MenuItemForm({
                 priceFull: typeof item.price === 'object' ? item.price.full : undefined,
                 featured: item.featured || false,
                 featuredImage: item.featuredImage || '',
+                diet: getDishTypes(item),
             });
         } else {
             setFormData({
@@ -1076,6 +1082,7 @@ function MenuItemForm({
                 priceFull: undefined,
                 featured: false,
                 featuredImage: '',
+                diet: [],
             });
         }
     }, [item, categories]);
@@ -1152,6 +1159,8 @@ function MenuItemForm({
             price: priceData as number | { half: number; full: number },
             featured: formData.featured,
             featuredImage: formData.featuredImage || undefined,
+            // Nothing ticked on a new dish: use the type its name suggests
+            diet: formData.diet.length > 0 ? formData.diet : inferDishTypes(formData.name),
         });
     };
 
@@ -1396,6 +1405,32 @@ function MenuItemForm({
                     />
                     <label htmlFor="featured-check" style={{ cursor: 'pointer' }}>Featured Item</label>
                 </div>
+
+                {/* Which type buttons on the menu page show this dish */}
+                <fieldset style={{ gridColumn: '1 / -1', border: 'none', padding: 0, margin: 0 }}>
+                    <legend style={{ marginBottom: '0.5rem', fontWeight: '500' }}>Type</legend>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.25rem' }}>
+                        {DISH_TYPES.map(type => (
+                            <label key={type.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', minHeight: '32px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.diet.includes(type.id)}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        diet: e.target.checked
+                                            ? DISH_TYPES.map(t => t.id).filter(id => id === type.id || formData.diet.includes(id))
+                                            : formData.diet.filter(id => id !== type.id),
+                                    })}
+                                />
+                                <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '50%', background: type.color }} />
+                                {type.label}
+                            </label>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.5rem 0 0' }}>
+                        Tick everything in the dish, e.g. Chicken and Egg. Customers use these buttons to filter the menu.
+                    </p>
+                </fieldset>
 
                 {/* Photo for the TV and specials screen, only needed for featured dishes */}
                 {formData.featured && (

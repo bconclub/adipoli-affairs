@@ -6,7 +6,10 @@ import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock, Star } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
-import { loadMenuItems, initializeMenuItems, getItemImage, MENU_GROUPS, CATEGORY_HEADINGS, type MenuItem as MenuItemType } from '@/lib/menuData';
+import { loadMenuItems, initializeMenuItems, getItemImage, getDishTypes, MENU_GROUPS, CATEGORY_HEADINGS, DISH_TYPES, type DishType, type MenuItem as MenuItemType } from '@/lib/menuData';
+import DishTypeBadge, { DishTypeMark } from '@/components/DishTypeBadge';
+
+const DISH_TYPE_STORAGE_KEY = 'menuDishType';
 
 // Use the MenuItem type from menuData
 type MenuItem = MenuItemType;
@@ -143,6 +146,26 @@ export default function MenuPage() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categoryScrollPositions, setCategoryScrollPositions] = useState<Record<string, number>>({});
     const [currentTime, setCurrentTime] = useState<Date>(new Date()); // For real-time updates
+    const [dishType, setDishType] = useState<'all' | DishType>('all');
+
+    // Remember the chosen dish type on this device
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(DISH_TYPE_STORAGE_KEY);
+            if (saved && DISH_TYPES.some(type => type.id === saved)) setDishType(saved as DishType);
+        } catch {
+            // Storage blocked (e.g. private mode): start from All
+        }
+    }, []);
+
+    const handleDishTypeChange = (type: 'all' | DishType) => {
+        setDishType(type);
+        try {
+            localStorage.setItem(DISH_TYPE_STORAGE_KEY, type);
+        } catch {
+            // Storage blocked: the choice still applies for this visit
+        }
+    };
 
     // Load menu items from localStorage (same as admin panel uses)
     useEffect(() => {
@@ -259,7 +282,8 @@ export default function MenuPage() {
                 matchesCategory = selectedCategories.includes(item.category);
             }
             const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesCategory && matchesSearch;
+            const matchesType = dishType === 'all' || getDishTypes(item).includes(dishType);
+            return matchesCategory && matchesSearch && matchesType;
         })
         .sort((a, b) => {
             // Sort by price (low to high) when a category is selected
@@ -348,7 +372,56 @@ export default function MenuPage() {
                     ))}
                 </div>
 
-                {/* Row 2: Filter and Search Bar */}
+                {/* Row 2: Dish type switcher */}
+                <div
+                    role="group"
+                    aria-label="Show dishes by type"
+                    style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
+                        paddingBottom: '0.75rem',
+                        marginBottom: '1rem',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'var(--primary) transparent',
+                        WebkitOverflowScrolling: 'touch'
+                    }}
+                    className="category-scroll"
+                >
+                    {[{ id: 'all' as const, label: 'All', color: '' }, ...DISH_TYPES].map(type => {
+                        const isActive = dishType === type.id;
+                        return (
+                            <button
+                                key={type.id}
+                                onClick={() => handleDishTypeChange(type.id)}
+                                aria-pressed={isActive}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.45rem',
+                                    minHeight: '40px',
+                                    padding: '0.4rem 1rem',
+                                    borderRadius: '50px',
+                                    whiteSpace: 'nowrap',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    flexShrink: 0,
+                                    cursor: 'pointer',
+                                    color: isActive ? '#1a0f0a' : 'var(--text-main)',
+                                    background: isActive ? 'white' : 'rgba(255,255,255,0.05)',
+                                    border: `1px solid ${isActive ? 'white' : 'rgba(255,255,255,0.15)'}`,
+                                    transition: 'background 0.2s, color 0.2s'
+                                }}
+                            >
+                                {type.color && <DishTypeMark color={type.color} />}
+                                {type.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Row 3: Filter and Search Bar */}
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'nowrap' }}>
                     {/* Filter Button */}
                     <button
@@ -584,6 +657,7 @@ export default function MenuPage() {
                                                 )}
                                             </div>
                                             <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                <DishTypeBadge item={item} />
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                                     <h3 style={{ 
                                                         fontSize: '1.25rem', 
@@ -741,6 +815,7 @@ export default function MenuPage() {
                                         )}
                                     </div>
                                     <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <DishTypeBadge item={item} />
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                             <h3 style={{
                                                 fontSize: '1.25rem',
@@ -806,7 +881,16 @@ export default function MenuPage() {
                 )
             ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                    <p>No items found matching your search.</p>
+                    <p>
+                        {dishType !== 'all' && !searchQuery
+                            ? `No ${DISH_TYPES.find(type => type.id === dishType)?.label.toLowerCase()} dishes here.`
+                            : 'No items found matching your search.'}
+                    </p>
+                    {dishType !== 'all' && (
+                        <button onClick={() => handleDishTypeChange('all')} className="btn btn-outline" style={{ marginTop: '1rem' }}>
+                            Show all dishes
+                        </button>
+                    )}
                 </div>
             )}
 
