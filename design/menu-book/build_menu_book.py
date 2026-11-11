@@ -168,7 +168,18 @@ def board_texture():
 
 
 def logo_files():
-    """Full logo, and the logo without its small tagline for the cover (tagline set as text there)."""
+    """Full logo, and the logo without its small tagline (the tagline is set as text where needed).
+
+    Prefers the logo from the old printed menu's cover, rendered from its vector artwork at
+    800 dpi with the flat page background keyed out (art/logo-oldmenu-full.png and
+    art/logo-oldmenu-mark.png, about 3500px wide); falls back to the website PNG, which is
+    only 344px wide."""
+    old_full, old_mark = ART / 'logo-oldmenu-full.png', ART / 'logo-oldmenu-mark.png'
+    if old_full.exists() and old_mark.exists():
+        full, mark_only = IMG_OUT / old_full.name, IMG_OUT / old_mark.name
+        full.write_bytes(old_full.read_bytes())
+        mark_only.write_bytes(old_mark.read_bytes())
+        return full, mark_only
     src = Image.open(ROOT / 'public' / 'Adipoli Logo V1.png').convert('RGBA')
     full, mark_only = IMG_OUT / 'logo.png', IMG_OUT / 'logo-mark.png'
     # The source is small (344px), so upscale it smoothly for print
@@ -352,19 +363,19 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .foot .num { font: 400 12pt 'Bebas Neue', sans-serif; color: var(--orange); letter-spacing:.1em; }
 
 /* cover: Kerala street artwork */
-.cover .top { position:absolute; top: 44mm; left:0; right:0; text-align:center; }
-.cover .top img { width: 142mm; }
-.cover .tag { margin-top: 7mm; font: 400 21pt 'Bebas Neue', sans-serif; letter-spacing: .42em; color: var(--yellow); padding-left: .42em; }
+.cover .top { position:absolute; top: 0; bottom: 74mm; left:0; right:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.cover .top img { width: 162mm; display:block; }
+.cover .tag { margin-top: 9mm; font: 400 22pt 'Bebas Neue', sans-serif; letter-spacing: .42em; color: var(--yellow); padding-left: .42em; }
 .cover .city { margin: 6mm auto 0; display:flex; align-items:center; justify-content:center; gap: 5mm; font: 600 10pt Poppins, sans-serif; letter-spacing: .5em; text-transform: uppercase; color:#fff; }
 .cover .city::before, .cover .city::after { content:""; width: 22mm; height: .5mm; background: var(--orange); }
-.cover .band { position:absolute; left:0; right:0; bottom:0; height: 90mm; background: var(--orange); }
-.cover .band::before { content:""; position:absolute; left:-12%; right:-12%; top:-20mm; height: 40mm; background: var(--orange); border-radius: 50%; }
-.cover .palms { position:absolute; left:0; right:0; bottom: 38mm; height: 120mm; color:#c5560c; }
-.cover .art { position:absolute; display:block; }
-.cover .auto { width: 106mm; left: 5mm; bottom: 9mm; }
-.cover .bus { width: 52mm; left: 115mm; bottom: 34mm; }
-.cover .tea { height: 64mm; left: 170mm; bottom: 9mm; }
-.cover .ground { position:absolute; left:0; right:0; bottom:0; height: 12mm; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(60,20,0,.35)); }
+.cover .band { position:absolute; left:0; right:0; bottom:0; height: 52mm; background: var(--orange); }
+.cover .band::before { content:""; position:absolute; left:-12%; right:-12%; top:-14mm; height: 28mm; background: var(--orange); border-radius: 50%; }
+.cover .palms { position:absolute; left:0; right:0; bottom: 22mm; height: 72mm; color:#c5560c; }
+/* every figure stands on the page's bottom edge; the tea man's cut-off legs run off the page */
+.cover .art { position:absolute; display:block; bottom: 0; }
+.cover .auto { height: 44mm; left: 22mm; }
+.cover .bus { width: 50mm; left: 104mm; }
+.cover .tea { height: 44mm; left: 163mm; bottom: -1.5mm; }
 
 /* story */
 .story .inner { position:absolute; top: 20mm; left: 18mm; right: 18mm; }
@@ -372,13 +383,15 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .story h2, .sigp h2 { font: 400 46pt/.95 'Bebas Neue', sans-serif; letter-spacing: .03em; color:#fff; margin-top: 2mm; }
 .story p { font-size: 10.5pt; line-height: 1.6; color: var(--ink); margin: 0; }
 .story .lead { margin-top: 6mm; font-size: 11.5pt; }
-.story .row { display:flex; gap: 9mm; margin-top: 8mm; align-items: center; }
-.story .map { flex: 0 0 72mm; height: 82mm; border-radius: 5mm; background: var(--map) url(__MAP__) center / contain no-repeat; }
+.story .row { display:flex; gap: 9mm; margin-top: 7mm; align-items: center; }
+.story .map { flex: 0 0 60mm; height: 84mm; border-radius: 5mm; background: var(--map); position:relative; display:flex; align-items:center; justify-content:center; }
+.story .map img { height: 68mm; display:block; margin-left: 4mm; }
+.story .map span { position:absolute; left: 5mm; bottom: 4mm; font: 400 15pt/1 'Bebas Neue', sans-serif; letter-spacing: .14em; color:#1d1a18; }
 .story .row .txt p + p { margin-top: 4.5mm; }
-.story .gf { margin-top: 9mm; border: .5mm solid var(--yellow); border-radius: 3mm; padding: 4mm 6mm; display:flex; align-items:center; gap: 4mm; }
+.story .gf { margin-top: 7mm; border: .5mm solid var(--yellow); border-radius: 3mm; padding: 4mm 6mm; display:flex; align-items:center; gap: 4mm; }
 .story .gf b { font: 400 20pt/1 'Bebas Neue', sans-serif; letter-spacing:.06em; color: var(--yellow); white-space: nowrap; }
 .story .gf span { font-size: 10pt; line-height: 1.45; }
-.story .leafimg { position:absolute; right: -8mm; bottom: -12mm; width: 182mm; }
+.story .leafimg { position:absolute; left: 0; right: 0; margin: 0 auto; bottom: 10mm; width: 150mm; }
 
 /* signature dishes */
 .sigp .inner { position:absolute; top: 18mm; left: 16mm; right: 16mm; bottom: 22mm; }
@@ -653,7 +666,6 @@ def build():
   <img class="art bus" src="{art['ksrtc-bus']}" alt="">
   <img class="art auto" src="{art['auto-driver']}" alt="">
   <img class="art tea" src="{art['tea-man']}" alt="">
-  <div class="ground"></div>
 </section>'''
     story = f'''<section class="page story" id="story">
   <div class="leaf tr">{leaf}</div>
@@ -661,7 +673,7 @@ def build():
     <div class="kick">Our story</div>
     <h2>The taste of Kerala</h2>
     <p class="lead">{html.escape(STORY[0])}</p>
-    <div class="row"><div class="map"></div>
+    <div class="row"><div class="map"><img src="{art['kerala-map']}" alt="Kerala"><span>Kerala</span></div>
       <div class="txt"><p>{html.escape(STORY[1])}</p><p>{html.escape(STORY[2])}</p></div></div>
     <div class="gf"><b>Gluten friendly</b><span>{html.escape(GLUTEN)}</span></div>
   </div>
@@ -697,7 +709,7 @@ def build():
     signature = signature.replace('<div class="leaf"></div><div class="leaf"></div>', f'<div class="leaf tr">{leaf}</div><div class="leaf bl">{leaf}</div>')
 
     data = json.dumps({'preview': PREVIEW, 'sigKeys': sig_keys, 'sizes': BOOK_SIZES, 'fixed': FIXED_PAGES}).replace('</', '<\\/')
-    css = CSS.replace('__BOARD__', f'img/{board.name}').replace('__MAP__', art['kerala-map'])
+    css = CSS.replace('__BOARD__', f'img/{board.name}')
     page = f'''<!doctype html>
 <html><head><meta charset="utf-8"><title>Adipoli Affairs Menu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
