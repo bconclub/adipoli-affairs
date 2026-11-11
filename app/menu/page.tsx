@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, Filter, X, Check, ChevronLeft, ChevronRight, Clock, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, X, ChevronLeft, ChevronRight, Clock, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
 import { loadMenuItems, initializeMenuItems, getItemImage, getDishTypes, MENU_GROUPS, CATEGORY_HEADINGS, DISH_TYPES, type DishType, type MenuItem as MenuItemType } from '@/lib/menuData';
@@ -140,8 +140,6 @@ const transformMenuData = (): MenuItem[] => {
 
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState("All");
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [showFilterModal, setShowFilterModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categoryScrollPositions, setCategoryScrollPositions] = useState<Record<string, number>>({});
@@ -250,44 +248,20 @@ export default function MenuPage() {
         return price.full || price.half || 0;
     };
 
-    const handleCategoryToggle = (category: string) => {
-        if (category === "All") return;
-        setSelectedCategories(prev => {
-            if (prev.includes(category)) {
-                return prev.filter(c => c !== category);
-            } else {
-                return [...prev, category];
-            }
-        });
-        setActiveCategory("All");
-    };
-
-    const handleFilterApply = () => {
-        setShowFilterModal(false);
-    };
-
-    const handleClearFilters = () => {
-        setSelectedCategories([]);
-        setActiveCategory("All");
-    };
+    const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
 
     const filteredItems = menuItems
         .filter(item => {
-            let matchesCategory = false;
-            if (activeCategory === "All" && selectedCategories.length === 0) {
-                matchesCategory = true;
-            } else if (activeCategory !== "All") {
-                matchesCategory = item.category === activeCategory;
-            } else if (selectedCategories.length > 0) {
-                matchesCategory = selectedCategories.includes(item.category);
-            }
-            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+            // Every word typed must appear in the name, description or category
+            const haystack = `${item.name} ${item.desc ?? ''} ${item.category}`.toLowerCase();
+            const matchesSearch = searchWords.every(word => haystack.includes(word));
             const matchesType = dishType === 'all' || getDishTypes(item).includes(dishType);
             return matchesCategory && matchesSearch && matchesType;
         })
         .sort((a, b) => {
             // Sort by price (low to high) when a category is selected
-            if (activeCategory !== "All" || selectedCategories.length > 0) {
+            if (activeCategory !== "All") {
                 const priceA = getPriceValue(a.price);
                 const priceB = getPriceValue(b.price);
                 return priceA - priceB;
@@ -330,40 +304,90 @@ export default function MenuPage() {
                     <p>Explore the diverse flavors of Kerala cuisine.</p>
                 </div>
 
-            {/* Controls */}
-            <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem' }}>
-                {/* Row 1: Category Buttons Only */}
-                <div 
-                    style={{ 
-                        display: 'flex', 
-                        gap: '0.75rem', 
-                        overflowX: 'auto', 
+            {/* Controls: search first, then categories, then dish type */}
+            <div style={{ marginBottom: '2.5rem' }}>
+                <div role="search" style={{ position: 'relative', marginBottom: '1rem' }}>
+                    <Search
+                        aria-hidden="true"
+                        size={22}
+                        style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', pointerEvents: 'none' }}
+                    />
+                    <input
+                        type="search"
+                        inputMode="search"
+                        enterKeyHint="search"
+                        aria-label="Search the menu"
+                        placeholder="Search dishes"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Escape') setSearchQuery(''); }}
+                        className="menu-search"
+                        style={{
+                            width: '100%',
+                            minHeight: '56px',
+                            padding: '0 3.5rem 0 3.25rem',
+                            borderRadius: '50px',
+                            background: 'rgba(255,255,255,0.08)',
+                            border: '1.5px solid rgba(242, 127, 36, 0.45)',
+                            color: 'white',
+                            fontSize: '17px',
+                            outline: 'none',
+                        }}
+                    />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            aria-label="Clear search"
+                            style={{
+                                position: 'absolute',
+                                right: '0.5rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: 'rgba(255,255,255,0.12)',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Categories */}
+                <div
+                    role="group"
+                    aria-label="Menu sections"
+                    style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        overflowX: 'auto',
                         overflowY: 'hidden',
-                        paddingBottom: '1rem',
-                        marginBottom: '1rem',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'var(--primary) transparent',
+                        paddingBottom: '0.5rem',
+                        marginBottom: '0.5rem',
                         WebkitOverflowScrolling: 'touch'
                     }}
-                    className="category-scroll"
+                    className="category-scroll menu-row"
                 >
                     {CATEGORIES.map(cat => (
                         <button
                             key={cat}
-                            onClick={() => {
-                                if (cat === "All") {
-                                    handleClearFilters();
-                                } else {
-                                    setActiveCategory(cat);
-                                    setSelectedCategories([]);
-                                }
-                            }}
+                            onClick={() => setActiveCategory(cat)}
+                            aria-pressed={activeCategory === cat}
                             className={`btn ${activeCategory === cat ? 'btn-primary' : 'btn-outline'}`}
-                            style={{ 
-                                borderRadius: '50px', 
-                                whiteSpace: 'nowrap', 
-                                fontSize: '0.9rem', 
-                                padding: '0.5rem 1.25rem',
+                            style={{
+                                borderRadius: '50px',
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.9rem',
+                                padding: '0.5rem 1.1rem',
+                                minHeight: '42px',
                                 flexShrink: 0
                             }}
                         >
@@ -372,24 +396,20 @@ export default function MenuPage() {
                     ))}
                 </div>
 
-                {/* Row 2: Dish type switcher */}
+                {/* Dish type: a lighter row */}
                 <div
                     role="group"
                     aria-label="Show dishes by type"
                     style={{
                         display: 'flex',
-                        gap: '0.5rem',
+                        gap: '0.25rem',
                         overflowX: 'auto',
                         overflowY: 'hidden',
-                        paddingBottom: '0.75rem',
-                        marginBottom: '1rem',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'var(--primary) transparent',
                         WebkitOverflowScrolling: 'touch'
                     }}
-                    className="category-scroll"
+                    className="category-scroll menu-row"
                 >
-                    {[{ id: 'all' as const, label: 'All', color: '' }, ...DISH_TYPES].map(type => {
+                    {[{ id: 'all' as const, label: 'All types', color: '' }, ...DISH_TYPES].map(type => {
                         const isActive = dishType === type.id;
                         return (
                             <button
@@ -399,90 +419,32 @@ export default function MenuPage() {
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '0.45rem',
-                                    minHeight: '40px',
-                                    padding: '0.4rem 1rem',
+                                    gap: '0.4rem',
+                                    minHeight: '36px',
+                                    padding: '0.25rem 0.75rem',
                                     borderRadius: '50px',
                                     whiteSpace: 'nowrap',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
+                                    fontSize: '0.82rem',
+                                    fontWeight: isActive ? 700 : 500,
                                     flexShrink: 0,
                                     cursor: 'pointer',
-                                    color: isActive ? '#1a0f0a' : 'var(--text-main)',
-                                    background: isActive ? 'white' : 'rgba(255,255,255,0.05)',
-                                    border: `1px solid ${isActive ? 'white' : 'rgba(255,255,255,0.15)'}`,
+                                    color: isActive ? 'var(--text-main)' : 'var(--text-secondary)',
+                                    background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                                    border: `1px solid ${isActive ? 'rgba(255,255,255,0.35)' : 'transparent'}`,
                                     transition: 'background 0.2s, color 0.2s'
                                 }}
                             >
-                                {type.color && <DishTypeMark color={type.color} />}
+                                {type.color && <DishTypeMark color={type.color} size={11} />}
                                 {type.label}
                             </button>
                         );
                     })}
                 </div>
-
-                {/* Row 3: Filter and Search Bar */}
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'nowrap' }}>
-                    {/* Filter Button */}
-                    <button
-                        onClick={() => setShowFilterModal(true)}
-                        className={`btn ${selectedCategories.length > 0 ? 'btn-primary' : 'btn-outline'}`}
-                        style={{ 
-                            borderRadius: '50px', 
-                            whiteSpace: 'nowrap', 
-                            fontSize: '0.9rem', 
-                            padding: '0.5rem 1rem',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <Filter size={16} />
-                        <span style={{ display: 'inline' }}>Filter</span>
-                        {selectedCategories.length > 0 && (
-                            <span style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '50%',
-                                width: '20px',
-                                height: '20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold'
-                            }}>
-                                {selectedCategories.length}
-                            </span>
-                        )}
-                    </button>
-
-                    {/* Search Bar */}
-                    <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', zIndex: 1 }} size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search dishes..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{
-                                width: '100%', 
-                                padding: '0.75rem 1rem 0.75rem 3rem', 
-                                borderRadius: '50px',
-                                background: 'rgba(255,255,255,0.05)', 
-                                border: '1px solid rgba(255,255,255,0.1)', 
-                                color: 'white',
-                                fontSize: '0.95rem',
-                                minWidth: 0
-                            }}
-                        />
-                    </div>
-                </div>
             </div>
 
             {/* Category Sections with Carousels */}
             {filteredItems.length > 0 ? (
-                activeCategory === "All" && selectedCategories.length === 0 && searchQuery === "" ? (
+                activeCategory === "All" && searchWords.length === 0 ? (
                     // Show all categories as carousels
                     MENU_GROUPS.filter(group => group.categories.some(category => itemsByCategory[category])).map(group => (
                     <div key={group.title}>
@@ -880,168 +842,30 @@ export default function MenuPage() {
                     </div>
                 )
             ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                    <p>
-                        {dishType !== 'all' && !searchQuery
-                            ? `No ${DISH_TYPES.find(type => type.id === dishType)?.label.toLowerCase()} dishes here.`
-                            : 'No items found matching your search.'}
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                    <p style={{ fontSize: '1.1rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+                        {searchQuery.trim()
+                            ? `No dishes match "${searchQuery.trim()}".`
+                            : `No ${DISH_TYPES.find(type => type.id === dishType)?.label.toLowerCase() ?? ''} dishes here.`}
                     </p>
-                    {dishType !== 'all' && (
-                        <button onClick={() => handleDishTypeChange('all')} className="btn btn-outline" style={{ marginTop: '1rem' }}>
-                            Show all dishes
-                        </button>
-                    )}
+                    <p style={{ marginBottom: '1.25rem' }}>Try another word, or see the whole menu.</p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="btn btn-primary">
+                                Clear search
+                            </button>
+                        )}
+                        {(dishType !== 'all' || activeCategory !== 'All') && (
+                            <button
+                                onClick={() => { setSearchQuery(''); setActiveCategory('All'); handleDishTypeChange('all'); }}
+                                className="btn btn-outline"
+                            >
+                                Show all dishes
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
-
-            {/* Category Filter Modal */}
-            <AnimatePresence>
-                {showFilterModal && (
-                    <>
-                        {/* Backdrop */}
-                        <motion.div
-                            style={{
-                                position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                zIndex: 1000,
-                                backdropFilter: 'blur(4px)'
-                            }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowFilterModal(false)}
-                        />
-
-                        {/* Modal */}
-                        <motion.div
-                            className="filter-modal"
-                            style={{
-                                position: 'fixed',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                background: 'var(--surface)',
-                                borderRadius: '16px',
-                                padding: '2rem',
-                                maxWidth: '90vw',
-                                width: '500px',
-                                maxHeight: '80vh',
-                                overflowY: 'auto',
-                                zIndex: 1001,
-                                border: '1px solid var(--glass-border)',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                                margin: 0
-                            }}
-                            initial={{ opacity: 0, scale: 0.9, y: -20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Header */}
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center',
-                                marginBottom: '1.5rem',
-                                paddingBottom: '1rem',
-                                borderBottom: '1px solid var(--glass-border)'
-                            }}>
-                                <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Filter Categories</h2>
-                                <button
-                                    onClick={() => setShowFilterModal(false)}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: 'var(--text-main)',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            {/* Categories List */}
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                                gap: '0.75rem',
-                                marginBottom: '1.5rem'
-                            }}>
-                                {CATEGORIES.filter(cat => cat !== "All").map(category => {
-                                    const isSelected = selectedCategories.includes(category);
-                                    return (
-                                        <button
-                                            key={category}
-                                            onClick={() => handleCategoryToggle(category)}
-                                            style={{
-                                                padding: '0.75rem 1rem',
-                                                borderRadius: '8px',
-                                                border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}`,
-                                                background: isSelected ? 'rgba(242, 127, 36, 0.2)' : 'rgba(255,255,255,0.05)',
-                                                color: 'var(--text-main)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                gap: '0.5rem',
-                                                transition: 'all 0.2s',
-                                                fontSize: '0.9rem'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                                    e.currentTarget.style.borderColor = 'var(--glass-border)';
-                                                }
-                                            }}
-                                        >
-                                            <span>{category}</span>
-                                            {isSelected && <Check size={18} style={{ color: 'var(--primary)' }} />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div style={{ 
-                                display: 'flex', 
-                                gap: '1rem',
-                                justifyContent: 'flex-end',
-                                paddingTop: '1rem',
-                                borderTop: '1px solid var(--glass-border)'
-                            }}>
-                                <button
-                                    onClick={handleClearFilters}
-                                    className="btn btn-outline"
-                                    style={{ minWidth: '100px' }}
-                                >
-                                    Clear All
-                                </button>
-                                <button
-                                    onClick={handleFilterApply}
-                                    className="btn btn-primary"
-                                    style={{ minWidth: '100px' }}
-                                >
-                                    Apply
-                                </button>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
