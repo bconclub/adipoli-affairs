@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Menu book and photo tooling: keep the scripts and artwork, not generated output
+/Adipoli-Menu-Book.pdf
+/Adipoli-Takeaway-Menu.pdf
+/.claude/
+design/**/__pycache__/
+design/menu-book/img/
+design/menu-book/*.html
+design/menu-book/publish.json
+design/menu-book/used.txt
+design/menu-photos/*.png
+design/menu-photos/*.jpg
+design/menu-photos/chunk*.json
+design/menu-photos/refs/
+design/menu-photos/tests/
