@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { menuData } from '@/data/menu';
-import { CATEGORY_HEADINGS, loadMenuItems, type MenuItem } from '@/lib/menuData';
+import { CATEGORY_HEADINGS, loadMenuItems, sortByPrice, type MenuItem } from '@/lib/menuData';
 import { formatTimeRestriction } from '@/lib/utils';
 import styles from './page.module.css';
 
@@ -53,12 +53,12 @@ const buildPages = (items: MenuItem[]): Page[] => {
         return {
             title: heading || category,
             note: !heading && restriction ? formatTimeRestriction(restriction) : undefined,
-            items: categoryItems,
+            items: sortByPrice(categoryItems),
         };
     };
     const mainBlock = (subgroup: string): Block | null => {
         const mains = items.filter(item => item.category === MAIN_COURSE && mainSubgroupOf(item.name) === subgroup);
-        return mains.length > 0 ? { title: `Mains: ${subgroup}`, items: mains } : null;
+        return mains.length > 0 ? { title: `Mains: ${subgroup}`, items: sortByPrice(mains) } : null;
     };
     const present = (blocks: (Block | null)[]): Block[] => blocks.filter((block): block is Block => block !== null);
 

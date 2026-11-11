@@ -71,6 +71,26 @@ export const MENU_GROUPS = [
     { title: "All Day Menu", categories: ["Kids Corner", "Desserts", "Hot Drinks", "Cool Drinks", "Juice", "Milkshake"] },
 ];
 
+// The lower of a dish's prices (half/full dishes sort by the half price)
+export function lowestPrice(price: MenuItem['price']): number {
+    if (typeof price === 'number') return price;
+    const prices = [price.half, price.full].filter((p): p is number => typeof p === 'number');
+    return prices.length > 0 ? Math.min(...prices) : 0;
+}
+
+// Dishes from lowest to highest price, ties by name A to Z. Returns a new array.
+export function sortByPrice<T extends Pick<MenuItem, 'name' | 'price'>>(items: T[]): T[] {
+    return [...items].sort((a, b) =>
+        lowestPrice(a.price) - lowestPrice(b.price) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
+// Dishes in menu category order, each category sorted by price. Returns a new array.
+export function sortMenu<T extends Pick<MenuItem, 'name' | 'price' | 'category'>>(items: T[]): T[] {
+    const order = MENU_GROUPS.flatMap(group => group.categories);
+    const categories = [...order, ...items.map(item => item.category).filter(category => !order.includes(category))];
+    return [...new Set(categories)].flatMap(category => sortByPrice(items.filter(item => item.category === category)));
+}
+
 // Category headings that show more than the category name
 export const CATEGORY_HEADINGS: Record<string, string> = {
     "Kerala Meals": "Kerala Meals (12pm to 3pm)",

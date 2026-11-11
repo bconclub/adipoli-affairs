@@ -6,7 +6,7 @@ import { Search, X, ChevronLeft, ChevronRight, Clock, Star } from 'lucide-react'
 import { motion } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
-import { loadMenuItems, initializeMenuItems, getItemImage, getDishTypes, MENU_GROUPS, CATEGORY_HEADINGS, DISH_TYPES, type DishType, type MenuItem as MenuItemType } from '@/lib/menuData';
+import { loadMenuItems, initializeMenuItems, getItemImage, getDishTypes, sortMenu, MENU_GROUPS, CATEGORY_HEADINGS, DISH_TYPES, type DishType, type MenuItem as MenuItemType } from '@/lib/menuData';
 import DishTypeBadge, { DishTypeMark } from '@/components/DishTypeBadge';
 
 const DISH_TYPE_STORAGE_KEY = 'menuDishType';
@@ -240,17 +240,10 @@ export default function MenuPage() {
         return '';
     };
 
-    const getPriceValue = (price: number | { half?: number; full?: number }): number => {
-        if (typeof price === 'number') {
-            return price;
-        }
-        // Default to full price if available, otherwise half
-        return price.full || price.half || 0;
-    };
-
     const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
 
-    const filteredItems = menuItems
+    // In menu order, each category from lowest to highest price
+    const filteredItems = sortMenu(menuItems
         .filter(item => {
             const matchesCategory = activeCategory === "All" || item.category === activeCategory;
             // Every word typed must appear in the name, description or category
@@ -258,18 +251,7 @@ export default function MenuPage() {
             const matchesSearch = searchWords.every(word => haystack.includes(word));
             const matchesType = dishType === 'all' || getDishTypes(item).includes(dishType);
             return matchesCategory && matchesSearch && matchesType;
-        })
-        .sort((a, b) => {
-            // Sort by price (low to high) when a category is selected
-            if (activeCategory !== "All") {
-                const priceA = getPriceValue(a.price);
-                const priceB = getPriceValue(b.price);
-                return priceA - priceB;
-            }
-            // Keep original order when "All" is selected
-            return 0;
-        });
-
+        }));
 
     // Group items by category
     const itemsByCategory = useMemo(() => {

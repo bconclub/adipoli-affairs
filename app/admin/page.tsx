@@ -14,6 +14,7 @@ import {
     checkAdminSession,
     adminLogin,
     adminLogout,
+    sortMenu,
     MENU_GROUPS,
     ADMIN_SESSION_EXPIRED_EVENT,
     DISH_TYPES,
@@ -307,11 +308,12 @@ export default function AdminPanel() {
         setLoginError('');
     };
 
-    const filteredMenuItems = menuItems.filter(item => {
+    // In menu order, each category from lowest to highest price
+    const filteredMenuItems = sortMenu(menuItems.filter(item => {
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
-    });
+    }));
 
     if (isCheckingAuth) {
         return (
