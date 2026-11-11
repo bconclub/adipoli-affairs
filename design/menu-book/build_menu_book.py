@@ -357,13 +357,13 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .cover .tag { margin-top: 7mm; font: 400 21pt 'Bebas Neue', sans-serif; letter-spacing: .42em; color: var(--yellow); padding-left: .42em; }
 .cover .city { margin: 6mm auto 0; display:flex; align-items:center; justify-content:center; gap: 5mm; font: 600 10pt Poppins, sans-serif; letter-spacing: .5em; text-transform: uppercase; color:#fff; }
 .cover .city::before, .cover .city::after { content:""; width: 22mm; height: .5mm; background: var(--orange); }
-.cover .band { position:absolute; left:0; right:0; bottom:0; height: 100mm; background: var(--orange); }
+.cover .band { position:absolute; left:0; right:0; bottom:0; height: 90mm; background: var(--orange); }
 .cover .band::before { content:""; position:absolute; left:-12%; right:-12%; top:-20mm; height: 40mm; background: var(--orange); border-radius: 50%; }
-.cover .palms { position:absolute; left:0; right:0; bottom: 46mm; height: 128mm; color:#c5560c; }
+.cover .palms { position:absolute; left:0; right:0; bottom: 38mm; height: 120mm; color:#c5560c; }
 .cover .art { position:absolute; display:block; }
-.cover .auto { width: 98mm; left: 7mm; bottom: 9mm; }
-.cover .bus { width: 56mm; left: 111mm; bottom: 32mm; }
-.cover .tea { height: 60mm; left: 170mm; bottom: 9mm; }
+.cover .auto { width: 106mm; left: 5mm; bottom: 9mm; }
+.cover .bus { width: 52mm; left: 115mm; bottom: 34mm; }
+.cover .tea { height: 64mm; left: 170mm; bottom: 9mm; }
 .cover .ground { position:absolute; left:0; right:0; bottom:0; height: 12mm; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(60,20,0,.35)); }
 
 /* story */
