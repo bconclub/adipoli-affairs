@@ -372,28 +372,16 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .foot .num { font: 400 12pt 'Bebas Neue', sans-serif; color: var(--orange); letter-spacing:.1em; }
 
 /* cover: Kerala street artwork */
-.cover .top { position:absolute; top: 0; bottom: 140mm; left:0; right:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.cover .top { position:absolute; top: 0; bottom: 116mm; left:0; right:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 .cover .top img { width: 162mm; display:block; }
 .cover .tag { margin-top: 9mm; font: 400 22pt 'Bebas Neue', sans-serif; letter-spacing: .42em; color: var(--yellow); padding-left: .42em; }
 .cover .city { margin: 6mm auto 0; display:flex; align-items:center; justify-content:center; gap: 5mm; font: 600 10pt Poppins, sans-serif; letter-spacing: .5em; text-transform: uppercase; color:#fff; }
 .cover .city::before, .cover .city::after { content:""; width: 22mm; height: .5mm; background: var(--orange); }
-/* collage: back layer is one vector drawing (sun, Kerala, palms, hills, backwater lines),
-   then the vehicles and the sadhya leaf, then the people and round dish badges in front.
-   People and vehicles stand on one ground line 1.5mm past the page edge. */
-.cover .collage { position:absolute; left:0; right:0; bottom:0; height: 140mm; }
-.cover .backdrop { position:absolute; left:0; bottom:0; width: 210mm; height: 140mm; display:block; }
-.cover .art { position:absolute; display:block; bottom: -1.5mm; }
-.cover .bus { height: 49mm; left: 34mm; }
-.cover .auto { height: 47mm; left: 106mm; }
-.cover .sadhya { width: 40mm; left: 73mm; bottom: .5mm; transform: rotate(4deg); filter: none; }
-.cover .tea { height: 80mm; left: 6mm; }
-.cover .woman { height: 70mm; left: 145mm; }
-.cover .badge { position:absolute; width: 24mm; height: 24mm; border-radius: 50%; overflow:hidden; border: .9mm solid #f4efe8; box-shadow: 0 0 0 1.1mm var(--orange), 0 1.5mm 3mm rgba(0,0,0,.35); }
-.cover .badge img { width:100%; height:100%; object-fit: cover; display:block; }
-.cover .badge.y { box-shadow: 0 0 0 1.1mm var(--yellow), 0 1.5mm 3mm rgba(0,0,0,.35); }
-.cover .b1 { left: 9mm; bottom: 93mm; }
-.cover .b2 { left: 53mm; bottom: 61mm; }
-.cover .b3 { left: 113mm; bottom: 58mm; }
+/* painted Kerala scene: full width plus 1.5mm bleed each side, bleeding off the bottom;
+   its top third fades into the chalkboard (fade baked into the image) */
+.cover .scene { position:absolute; left: -1.5mm; width: 213mm; bottom: -1.5mm; }
+.cover .scene img { position:absolute; left: 0; width: 213mm; display:block; }
+.cover .s-top { top: 0; }
 
 /* story */
 .story .inner { position:absolute; top: 20mm; left: 18mm; right: 18mm; }
@@ -570,73 +558,38 @@ PALMS_SVG = '''<svg viewBox="0 0 210 120" width="100%" height="100%" preserveAsp
 <use href="#palm" transform="translate(150 6) scale(.9)"/><use href="#palm" transform="translate(-16 22) scale(.8)"/>
 <use href="#palm" transform="translate(178 30) scale(.7)"/></svg>'''
 
-def cover_backdrop(leaf_svg):
-    """Back layer of the cover collage, drawn in brand colours (viewBox in mm, ground at y=140)."""
-    import random
-    rnd = random.Random(11)
-    k = (ART / 'kerala-map.svg').read_text(encoding='utf-8')
-    kpath = re.search(r'<path transform="([^"]+)" d="([^"]+)" fill="#467336"', k)
-    kerala = (f'<svg x="121" y="10" width="66" height="88" viewBox="0 0 37.336717 49.81302">'
-              f'<path transform="{kpath.group(1)}" d="{kpath.group(2)}" fill="#a8460b" opacity=".75"/></svg>') if kpath else ''
-    palm = ('<g id="cpalm"><path d="M30 120 C31 95 33 70 38 46 L40.5 46.5 C36 70 34.5 95 34 120Z"/>'
-            '<path d="M39 46 C30 38 18 37 8 42 C19 40 29 42 39 47Z"/><path d="M39 46 C33 34 22 28 12 28 C23 32 32 38 39 47Z"/>'
-            '<path d="M39 46 C40 34 36 24 29 17 C35 26 37 36 39 47Z"/><path d="M39 46 C46 36 56 32 66 33 C55 35 47 39 39 47Z"/>'
-            '<path d="M39 46 C49 41 60 42 69 49 C59 45 49 45 39 47Z"/><path d="M39 46 C44 33 52 26 61 23 C53 29 46 37 39 47Z"/></g>')
+SCENE = 'adipoli-cover-collage-v1.png'   # painted Kerala scene for the bottom of the cover
+SCENE_WIDTH_MM = 213                       # 210mm plus 1.5mm bleed each side
+SCENE_FADE = 1 / 3                         # transparent at the top, opaque a third of the way down
 
-    def palm_at(x, ground, h, flip=False):
-        sc = h / 103
-        tx = x - (32 * sc if not flip else -32 * sc)
-        fl = f' scale({-sc:.3f} {sc:.3f})' if flip else f' scale({sc:.3f})'
-        nuts = ''.join(f'<circle cx="{x + (7 if not flip else -7) * sc + dx * sc:.2f}" cy="{ground - 72 * sc:.2f}" r="{1.6 * sc:.2f}" fill="#4a2208"/>'
-                       for dx in (-2.2, 0, 2.2))
-        return f'<use href="#cpalm" transform="translate({tx:.2f} {ground - 120 * sc:.2f}){fl}"/>{nuts}'
 
-    palms = ''.join(palm_at(*a) for a in [(13, 97, 66), (33, 95, 50, True), (92, 93, 40), (160, 93, 44, True), (181, 92, 56), (200, 90, 74, True)])
+def cover_scene():
+    """The cover illustration, upscaled 2x (Lanczos plus a light unsharp mask) with a soft
+    fade baked into its top third so its dark sky melts into the chalkboard.
 
-    def wave(y, w, col, op):
-        return (f'<path d="M-4 {y} ' + ' '.join('q3.5 -2.2 7 0 t7 0' for _ in range(16)) +
-                f'" fill="none" stroke="{col}" stroke-width="{w}" stroke-linecap="round" opacity="{op}"/>')
-
-    dots = ''.join(f'<circle cx="{rnd.uniform(4, 206):.1f}" cy="{rnd.uniform(114, 139):.1f}" r="{rnd.uniform(.45, 1.0):.2f}" '
-                   f'fill="{rnd.choice(["#f6b81c", "#1d1a18", "#fff3d6", "#f6b81c"])}" opacity="{rnd.uniform(.5, .9):.2f}"/>' for _ in range(46))
-
-    def curry(x, y, sc, rot):
-        leaves = ''.join(f'<ellipse cx="{4 + i * 4}" cy="{-3.4 if i % 2 else 1.2}" rx="2.3" ry="1" '
-                         f'transform="rotate({-25 if i % 2 else 20} {4 + i * 4} {-3.4 if i % 2 else 1.2})"/>' for i in range(5))
-        return (f'<g transform="translate({x} {y}) rotate({rot}) scale({sc})" fill="#1d1a18">'
-                f'<path d="M0 0 C6 -2 14 -3 22 -2" stroke="#1d1a18" stroke-width=".6" fill="none"/>{leaves}</g>')
-
-    leaf_inner = re.sub(r'^<svg[^>]*>|</svg>$', '', leaf_svg.strip())
-
-    def sprig(x, y, size, tr=''):
-        return (f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 100 100" overflow="visible">'
-                f'<g transform="{tr}" fill="#e8731a" color="#e8731a">{leaf_inner}</g></svg>')
-
-    parts = [
-        '<svg class="backdrop" viewBox="0 0 210 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">',
-        f'<defs>{palm}',
-        '<radialGradient id="glow"><stop offset="0" stop-color="#f6b81c" stop-opacity=".5"/>'
-        '<stop offset=".55" stop-color="#e8731a" stop-opacity=".18"/><stop offset="1" stop-color="#e8731a" stop-opacity="0"/></radialGradient>',
-        '<radialGradient id="shade"><stop offset="0" stop-color="#3a1404" stop-opacity=".55"/>'
-        '<stop offset="1" stop-color="#3a1404" stop-opacity="0"/></radialGradient>',
-        '<linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4621a"/>'
-        '<stop offset="1" stop-color="#b9500f"/></linearGradient></defs>',
-        '<circle cx="104" cy="66" r="66" fill="url(#glow)"/>',
-        '<circle cx="104" cy="70" r="19" fill="#f6b81c"/>'
-        '<circle cx="104" cy="70" r="22.5" fill="none" stroke="#f6b81c" stroke-width=".6" opacity=".55"/>',
-        kerala,
-        f'<g fill="#a9480d">{palms}</g>',
-        sprig(-3, 76, 24) + sprig(189, 70, 24, 'translate(100 0) scale(-1 1)'),
-        '<path d="M0 140 L0 96 C25 86 50 98 78 92 C104 86 128 99 154 92 C178 86 196 95 210 89 L210 140Z" fill="url(#hill)"/>',
-        '<path d="M0 140 L0 114 C35 104 70 116 106 110 C140 104 172 116 210 107 L210 140Z" fill="#e8731a"/>',
-        wave(122, .9, '#f6b81c', .8) + wave(129, .6, '#ffd36a', .55) + wave(135, .5, '#f6b81c', .4),
-        curry(3, 112, .9, -14) + curry(184, 110, .9, 12),
-        dots,
-        '<ellipse cx="29" cy="139.6" rx="27" ry="3.4" fill="url(#shade)"/><ellipse cx="175" cy="139.6" rx="33" ry="3.4" fill="url(#shade)"/>'
-        '<ellipse cx="65" cy="139.6" rx="32" ry="2.6" fill="url(#shade)"/><ellipse cx="130" cy="139.6" rx="26" ry="2.6" fill="url(#shade)"/>',
-        '</svg>',
-    ]
-    return '\n'.join(parts)
+    Written as two pieces to keep the PDF small: a PNG strip with the fade (alpha) and an
+    opaque JPEG for the rest; they overlap by a few rows so there is no seam.
+    Returns (top_png, bottom_jpg, split_fraction, top_fraction)."""
+    from PIL import ImageFilter
+    import numpy as np
+    src = ART / SCENE
+    top_out, bot_out = IMG_OUT / 'cover-scene-top.png', IMG_OUT / 'cover-scene-bottom.jpg'
+    im = Image.open(src).convert('RGB')
+    W, H = im.width * 2, im.height * 2
+    fade_rows = round(H * SCENE_FADE)
+    top_rows = fade_rows + 12
+    if not (top_out.exists() and bot_out.exists()) or min(top_out.stat().st_mtime, bot_out.stat().st_mtime) < max(
+            src.stat().st_mtime, Path(__file__).stat().st_mtime):
+        big = im.resize((W, H), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=1.6, percent=55, threshold=2))
+        t = np.clip(np.arange(top_rows) / fade_rows, 0, 1)
+        ramp = t * t * (3 - 2 * t)                                   # smoothstep, no hard start or end
+        rng = np.random.default_rng(3)
+        alpha = np.clip(ramp[:, None] * 255 + rng.uniform(-.8, .8, (top_rows, W)), 0, 255).astype('uint8')
+        top = big.crop((0, 0, W, top_rows)).convert('RGBA')
+        top.putalpha(Image.fromarray(alpha, 'L'))
+        top.save(top_out, optimize=True)
+        big.crop((0, fade_rows, W, H)).save(bot_out, 'JPEG', quality=90, optimize=True, subsampling=0)
+    return top_out, bot_out, fade_rows / H, top_rows / H
 
 
 # Orange leaf sprig for page corners (like the old printed menu)
@@ -741,12 +694,8 @@ def build():
             f'<span class="price">{prices_html(item)}</span>'
             f'{f"<p>{html.escape(desc)}</p>" if desc else ""}</div>')
 
-    # Round dish badges on the cover collage (signature dishes)
-    badges = ''
-    for cls, name in (('b1 y', 'Masala dosa'), ('b2', 'Chatti biriyani beef'), ('b3 y', 'Beef roast')):
-        item = next((i for i in menu if i['name'].lower() == name.lower()), None)
-        if item and photo_source(item)[0].exists():
-            badges += f'<div class="badge {cls}"><img src="img/{prepared_photo(photo_source(item)[0], 600).name}" alt=""></div>'
+    scene_top, scene_bot, split, top_part = cover_scene()
+    scene_h = SCENE_WIDTH_MM * 1024 / 1536
     cover = f'''<section class="page cover">
   <div class="leaf tl">{leaf}</div><div class="leaf tr">{leaf}</div>
   <div class="top">
@@ -754,14 +703,9 @@ def build():
     <div class="tag">South Indian Kerala Cuisine</div>
     <div class="city">Christchurch</div>
   </div>
-  <div class="collage">
-    {cover_backdrop(LEAF_SVG)}
-    <img class="art bus" src="{art['ksrtc-bus']}" alt="">
-    <img class="art auto" src="{art['auto-driver']}" alt="">
-    <img class="art sadhya" src="{art['sadhya-leaf']}" alt="">
-    {badges}
-    <img class="art tea" src="{art['tea-man']}" alt="">
-    <img class="art woman" src="{art['woman-dosa']}" alt="">
+  <div class="scene" style="height: {scene_h:.2f}mm">
+    <img class="s-bot" src="img/{scene_bot.name}" alt="" style="top: {split * scene_h:.3f}mm; height: {(1 - split) * scene_h:.3f}mm">
+    <img class="s-top" src="img/{scene_top.name}" alt="" style="height: {top_part * scene_h:.3f}mm">
   </div>
 </section>'''
     story = f'''<section class="page story" id="story">
