@@ -192,12 +192,21 @@ def logo_files():
 
 
 def art_files():
-    """Old-menu artwork copied next to the page so relative paths work in Chrome."""
+    """Old-menu artwork copied next to the page so relative paths work in Chrome.
+
+    Cutout PNGs are trimmed to their solid pixels (alpha above 40): some carry a faint
+    shadow or transparent margin (the auto has ~9% empty space under its wheels), which
+    would make a figure float above the line it is placed on."""
     names = {}
     for f in ART.iterdir():
         out = IMG_OUT / f'art-{f.name}'
-        if not out.exists() or out.stat().st_mtime < f.stat().st_mtime:
-            out.write_bytes(f.read_bytes())
+        if not out.exists() or out.stat().st_mtime < f.stat().st_mtime or out.stat().st_mtime < Path(__file__).stat().st_mtime:
+            if f.suffix.lower() == '.png' and not f.stem.startswith('logo'):
+                im = Image.open(f).convert('RGBA')
+                solid = im.getchannel('A').point(lambda v: 255 if v > 40 else 0)
+                im.crop(solid.getbbox()).save(out, optimize=True)
+            else:
+                out.write_bytes(f.read_bytes())
         names[f.stem] = f'img/{out.name}'
     return names
 
@@ -363,19 +372,21 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .foot .num { font: 400 12pt 'Bebas Neue', sans-serif; color: var(--orange); letter-spacing:.1em; }
 
 /* cover: Kerala street artwork */
-.cover .top { position:absolute; top: 0; bottom: 74mm; left:0; right:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.cover .top { position:absolute; top: 0; bottom: 120mm; left:0; right:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 .cover .top img { width: 162mm; display:block; }
 .cover .tag { margin-top: 9mm; font: 400 22pt 'Bebas Neue', sans-serif; letter-spacing: .42em; color: var(--yellow); padding-left: .42em; }
 .cover .city { margin: 6mm auto 0; display:flex; align-items:center; justify-content:center; gap: 5mm; font: 600 10pt Poppins, sans-serif; letter-spacing: .5em; text-transform: uppercase; color:#fff; }
 .cover .city::before, .cover .city::after { content:""; width: 22mm; height: .5mm; background: var(--orange); }
-.cover .band { position:absolute; left:0; right:0; bottom:0; height: 52mm; background: var(--orange); }
+.cover .band { position:absolute; left:0; right:0; bottom:0; height: 105mm; background: var(--orange); }
 .cover .band::before { content:""; position:absolute; left:-12%; right:-12%; top:-14mm; height: 28mm; background: var(--orange); border-radius: 50%; }
-.cover .palms { position:absolute; left:0; right:0; bottom: 22mm; height: 72mm; color:#c5560c; }
+.cover .palms { position:absolute; left:0; right:0; bottom: -1.5mm; height: 150mm; color:#c5560c; }
 /* every figure stands on the page's bottom edge; the tea man's cut-off legs run off the page */
-.cover .art { position:absolute; display:block; bottom: 0; }
-.cover .auto { height: 44mm; left: 22mm; }
-.cover .bus { width: 50mm; left: 104mm; }
-.cover .tea { height: 44mm; left: 163mm; bottom: -1.5mm; }
+.cover .art { position:absolute; display:block; bottom: -1.5mm; }
+/* one ground line 1.5mm past the page edge; bus about 59% of the band height, the auto with
+   its driver and the tea man at the same human scale; even gaps across the width */
+.cover .auto { height: 54mm; left: 10mm; }
+.cover .bus { height: 70mm; left: 73.5mm; }
+.cover .tea { height: 52mm; left: 170mm; }
 
 /* story */
 .story .inner { position:absolute; top: 20mm; left: 18mm; right: 18mm; }

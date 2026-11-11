@@ -149,16 +149,17 @@ h2, h3, h5 { margin:0; font-weight: normal; }
 
 /* front cover */
 .cover { align-items: center; text-align:center; }
-.cover .logo { width: 80mm; margin-top: 14mm; }
+.cover .logo { width: 80mm; margin-top: auto; }
 .cover .tag { margin-top: 5mm; font: 400 12.5pt 'Bebas Neue', sans-serif; letter-spacing: .32em; color: var(--yellow); padding-left: .32em; }
 .cover .rule { width: 26mm; height: .5mm; background: var(--orange); margin: 6mm auto 0; }
 .cover .ta { margin-top: 5mm; font: 400 40pt/.95 'Bebas Neue', sans-serif; letter-spacing: .04em; color:#fff; }
 .cover .city { margin-top: 2.5mm; font: 600 7.5pt Poppins, sans-serif; letter-spacing: .42em; text-transform: uppercase; color: var(--muted); padding-left: .42em; }
-.cover .scene { position: relative; margin-top: auto; width: 100%; height: 86mm; border-radius: 4mm; background: var(--orange); overflow: hidden; }
+.cover .city + .scene, .cover .scene { position: relative; margin-top: auto; width: 100%; height: 66mm; border-radius: 4mm; background: var(--orange); overflow: hidden; }
 .cover .scene .palms { position:absolute; left: 0; right: 0; bottom: 0; height: 80mm; color:#c5560c; }
-.cover .scene img { position:absolute; bottom: 0; }
-.cover .scene .auto { width: 52mm; left: 1mm; bottom: 2mm; }
-.cover .scene .woman { height: 70mm; right: 1mm; }
+.cover .scene img { position:absolute; bottom: -1mm; }
+/* both figures stand on the bottom edge of the orange box */
+.cover .scene .auto { height: 36mm; left: 2mm; }
+.cover .scene .woman { height: 52mm; right: 1mm; }
 
 /* back panel */
 .back .logo { width: 62mm; align-self: center; margin-top: 2mm; }
