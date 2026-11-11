@@ -243,6 +243,12 @@ def merge_sizes(items):
     return out
 
 
+def by_price(dishes):
+    """Menu order within a section: cheapest first. Half/full dishes sort by their lower price;
+    equal prices by name A to Z. Shared by the book and the takeaway card."""
+    return sorted(dishes, key=lambda d: (min(float(v) for _, v in d['prices']), d['name'].lower()))
+
+
 def clean_desc(item, cat):
     desc = (item.get('desc') or '').strip()
     if cat in NOTES:
@@ -250,8 +256,14 @@ def clean_desc(item, cat):
     return desc
 
 
+def tabular(text):
+    """Each digit and the decimal point in its own fixed-width cell (centred, like true tabular
+    figures), so decimal points and price edges line up: Poppins' digits differ in width."""
+    return ''.join(c if c == '$' else f'<i class="pt">{c}</i>' if c == '.' else f'<i>{c}</i>' for c in text)
+
+
 def prices_html(item):
-    return ''.join(f'<span class="p">{f"<em>{label}</em>" if label else ""}{price(value)}</span>'
+    return ''.join(f'<span class="p">{f"<em>{label}</em>" if label else ""}{tabular(price(value))}</span>'
                    for label, value in item['prices'])
 
 
@@ -350,6 +362,9 @@ h2, h3, h4, h5 { margin:0; font-weight: normal; }
 .dish .dots { flex:1; border-bottom: .3mm dotted rgba(255,255,255,.28); transform: translateY(-1mm); min-width: 4mm; }
 .dish .price, .sig .price { font: 600 11.5pt Poppins, sans-serif; color: var(--yellow); white-space: nowrap; }
 .price .p + .p { margin-left: 3mm; }
+/* tabular prices: one fixed cell per character (see tabular()) */
+.price i { font-style: normal; display: inline-block; width: .66em; text-align: center; }
+.price i.pt { width: .3em; }
 .price em { font-style: normal; font-weight: 500; font-size: 8pt; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-right: 1.2mm; }
 .pair { display:grid; grid-template-columns: 1fr 1fr; column-gap: 12mm; }
 .pair .dish p { max-width: none; }
@@ -634,7 +649,7 @@ def build():
                 continue
             total += len(items)
             new_count += sum(photo_source(i)[1] for i in items)
-            dishes = merge_sizes(items)
+            dishes = by_price(merge_sizes(items))
             times = items[0].get('timeRestriction')
             when = f'<span class="when">{clock(times["start"])} to {clock(times["end"])}</span>' if times else ''
             head = [group_head] if first_in_group else []

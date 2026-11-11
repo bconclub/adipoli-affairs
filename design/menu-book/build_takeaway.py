@@ -73,7 +73,7 @@ def cover_scene():
     rgba.save(out, optimize=True)
     return out
 # Short drink names sit two to a line
-PAIRED = {'Hot Drinks', 'Juice', 'Milkshake'}
+PAIRED = set()   # single rows everywhere: one straight price column per panel
 
 
 def dish_row(item):
@@ -96,7 +96,7 @@ def group_units(title, cats, by_cat):
         if not items:
             continue
         count += len(items)
-        dishes = book.merge_sizes(items)
+        dishes = book.by_price(book.merge_sizes(items))
         times = items[0].get('timeRestriction')
         when = f'<span class="when">{book.clock(times["start"])} to {book.clock(times["end"])}</span>' if times else ''
         head = [f'<div class="cat"><h3>{html.escape(CARD_NAMES.get(cat, cat))}</h3>{when}</div>']
@@ -172,6 +172,9 @@ h2, h3, h5 { margin:0; font-weight: normal; }
 .dish .dots { flex:1; min-width: 3mm; border-bottom: .3mm dotted rgba(255,255,255,.3); transform: translateY(-.7mm); }
 .dish .price { font: 700 var(--fs)/1.15 Poppins, sans-serif; color: var(--yellow); white-space: nowrap; }
 .price .p + .p { margin-left: 2mm; }
+/* tabular prices: one fixed cell per character (see build_menu_book.tabular) */
+.price i { font-style: normal; display: inline-block; width: .66em; text-align: center; }
+.price i.pt { width: .3em; }
 .price em { font-style: normal; font-weight: 500; font-size: 6.5pt; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-right: .8mm; }
 .mark { width: 2.7mm; height: 2.7mm; border: .3mm solid; border-radius: .4mm; display:inline-flex; align-items:center; justify-content:center; background:#fff; flex-shrink:0; transform: translateY(.25mm); }
 .mark span { width: 1.25mm; height: 1.25mm; border-radius: 50%; }
