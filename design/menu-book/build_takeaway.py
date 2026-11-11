@@ -41,6 +41,37 @@ PREVIEW = '--preview' in sys.argv
 CARD_NAMES = {'Main Course': 'Mains', 'Juice': 'Juices', 'Milkshake': 'Milkshakes'}
 NOTES = {'Main Course': 'Complimentary rice not included'}
 ORDER_ONLINE = ['order.sipocloudpos.com/adipoli-affairs', 'adipoliaffairs.com']
+
+# Front cover scene: a portrait crop of the book cover's painted Kerala scene
+SCENE_CROP_LEFT = 768        # source px; the chenda drummer is fully outside, the auto driver fully inside
+SCENE_W_MM, SCENE_H_MM = 98.5, 115   # bottom ~55% of the 99 x 210 mm cover panel
+SCENE_LEFT_FADE_MM = 2       # soft edge at the fold, so nothing visible reaches it
+
+
+def cover_scene():
+    """Crop, upscale 2x (Lanczos plus a light unsharp mask) and fade the top third and the
+    fold-side edge, like the book cover. Returns the PNG path."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    src = book.ART / book.SCENE
+    out = book.IMG_OUT / 'takeaway-cover-scene.png'
+    if out.exists() and out.stat().st_mtime >= max(src.stat().st_mtime, Path(__file__).stat().st_mtime):
+        return out
+    im = Image.open(src).convert('RGB')
+    w = im.width - SCENE_CROP_LEFT
+    h = round(w * SCENE_H_MM / SCENE_W_MM)
+    crop = im.crop((SCENE_CROP_LEFT, im.height - h, im.width, im.height))
+    big = crop.resize((w * 2, h * 2), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=1.6, percent=55, threshold=2))
+    W, H = big.size
+    ease = lambda t: t * t * (3 - 2 * t)
+    ty = ease(np.clip(np.arange(H) / (H * book.SCENE_FADE), 0, 1))
+    tx = ease(np.clip(np.arange(W) / (W * SCENE_LEFT_FADE_MM / SCENE_W_MM), 0, 1))
+    rng = np.random.default_rng(5)
+    alpha = np.clip(ty[:, None] * tx[None, :] * 255 + rng.uniform(-.8, .8, (H, W)), 0, 255).astype('uint8')
+    rgba = big.convert('RGBA')
+    rgba.putalpha(Image.fromarray(alpha, 'L'))
+    rgba.save(out, optimize=True)
+    return out
 # Short drink names sit two to a line
 PAIRED = {'Hot Drinks', 'Juice', 'Milkshake'}
 
@@ -147,19 +178,15 @@ h2, h3, h5 { margin:0; font-weight: normal; }
 .art-fill { flex: 1; min-height: 0; display:flex; align-items:flex-end; justify-content:center; padding-top: 3mm; }
 .art-fill img { max-width: 78mm; max-height: 100%; object-fit: contain; display:block; }
 
-/* front cover */
-.cover { align-items: center; text-align:center; }
-.cover .logo { width: 80mm; margin-top: auto; }
+/* front cover: painted Kerala scene in the bottom ~55%, faded into the dark top and at the fold;
+   logo block centred in the dark space above it */
+.cover-scene { position:absolute; left: 198.5mm; bottom: 0; width: 98.5mm; height: 115mm; display:block; }
+.cover { align-items: center; text-align:center; justify-content: center; bottom: 88mm; }
+.cover .logo { width: 80mm; }
 .cover .tag { margin-top: 5mm; font: 400 12.5pt 'Bebas Neue', sans-serif; letter-spacing: .32em; color: var(--yellow); padding-left: .32em; }
-.cover .rule { width: 26mm; height: .5mm; background: var(--orange); margin: 6mm auto 0; }
-.cover .ta { margin-top: 5mm; font: 400 40pt/.95 'Bebas Neue', sans-serif; letter-spacing: .04em; color:#fff; }
+.cover .rule { width: 26mm; height: .5mm; background: var(--orange); margin: 5mm auto 0; }
+.cover .ta { margin-top: 4.5mm; font: 400 40pt/.95 'Bebas Neue', sans-serif; letter-spacing: .04em; color:#fff; }
 .cover .city { margin-top: 2.5mm; font: 600 7.5pt Poppins, sans-serif; letter-spacing: .42em; text-transform: uppercase; color: var(--muted); padding-left: .42em; }
-.cover .city + .scene, .cover .scene { position: relative; margin-top: auto; width: 100%; height: 66mm; border-radius: 4mm; background: var(--orange); overflow: hidden; }
-.cover .scene .palms { position:absolute; left: 0; right: 0; bottom: 0; height: 80mm; color:#c5560c; }
-.cover .scene img { position:absolute; bottom: -1mm; }
-/* both figures stand on the bottom edge of the orange box */
-.cover .scene .auto { height: 36mm; left: 2mm; }
-.cover .scene .woman { height: 52mm; right: 1mm; }
 
 /* back panel */
 .back .logo { width: 62mm; align-self: center; margin-top: 2mm; }
@@ -262,6 +289,7 @@ def build():
     board = book.board_texture()
     logo, logo_mark = book.logo_files()
     art = book.art_files()
+    scene = cover_scene()
     legend = (f'<span>{book.mark(["veg"])}Veg</span><span>{book.mark(["egg"])}Egg</span>'
               f'<span>{book.mark(["chicken"])}Meat or seafood</span>')
 
@@ -285,14 +313,13 @@ def build():
     <div class="cater"><b>Catering and pre-orders</b><span>We provide catering and pre-orders for events, parties, and special occasions.</span></div>
     <div class="foot"><div class="legend">{legend}</div><div>Prices in NZD</div></div>
   </div>
+  <img class="cover-scene" src="img/{scene.name}" alt="">
   <div class="panel p3 cover">
     <img class="logo" src="img/{logo_mark.name}" alt="Adipoli Affairs">
     <div class="tag">South Indian Kerala Cuisine</div>
     <div class="rule"></div>
     <div class="ta">Takeaway Menu</div>
     <div class="city">Christchurch</div>
-    <div class="scene"><div class="palms">{book.PALMS_SVG}</div>
-      <img class="auto" src="{art['auto-driver']}" alt=""><img class="woman" src="{art['woman-dosa']}" alt=""></div>
   </div>
 </section>'''
     inside = f'''<section class="sheet inside">
