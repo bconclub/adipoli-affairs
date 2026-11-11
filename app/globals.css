@@ -365,3 +365,8 @@ select {
 .menu-search:focus { border-color: var(--primary) !important; background: rgba(255, 255, 255, 0.1) !important; }
 .menu-row { scrollbar-width: none !important; }
 .menu-row::-webkit-scrollbar { display: none; }
+
+/* Menu PDF download button: full width on phones */
+@media (max-width: 640px) {
+  .download-menu { width: 100%; }
+}

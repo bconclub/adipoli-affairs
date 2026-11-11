@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, X, ChevronLeft, ChevronRight, Clock, Star } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Clock, Star, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { menuData } from '@/data/menu';
 import { formatProductName, type TimeRestriction, isItemAvailableNow, formatTimeRestriction } from '@/lib/utils';
@@ -284,6 +284,17 @@ export default function MenuPage() {
                 <div className="text-center mb-8">
                     <h1 className="text-primary">Our Menu</h1>
                     <p>Explore the diverse flavors of Kerala cuisine.</p>
+                    <a
+                        href="/downloads/Adipoli-Affairs-Menu.pdf"
+                        download
+                        target="_blank"
+                        rel="noopener"
+                        className="btn btn-outline download-menu"
+                        style={{ gap: '0.5rem', borderRadius: '50px', marginTop: '1.25rem' }}
+                    >
+                        <Download size={18} aria-hidden="true" />
+                        Download menu (PDF)
+                    </a>
                 </div>
 
             {/* Controls: search first, then categories, then dish type */}

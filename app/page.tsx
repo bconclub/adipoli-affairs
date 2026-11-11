@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Star, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, Clock, MapPin, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { initializeMenuItems, loadMenuItems, getSignatureDishes, type MenuItem } from "@/lib/menuData";
@@ -491,10 +491,23 @@ export default function Home() {
             <h2 className="text-primary" style={{ fontSize: isMobile ? '1.75rem' : undefined }}>Signature Dishes</h2>
             <p style={{ fontSize: isMobile ? '0.9rem' : undefined }}>Our chef's most recommended authentic delicacies.</p>
           </div>
-          <Link href="/menu" className="btn btn-outline" style={{ 
-            width: isMobile ? '100%' : 'auto',
-            justifyContent: 'center'
-          }}>View Full Menu</Link>
+          <div style={{ display: 'flex', gap: '0.75rem', flexDirection: isMobile ? 'column' : 'row', width: isMobile ? '100%' : 'auto' }}>
+            <Link href="/menu" className="btn btn-outline" style={{ 
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: 'center'
+            }}>View Full Menu</Link>
+            <a
+              href="/downloads/Adipoli-Affairs-Menu.pdf"
+              download
+              target="_blank"
+              rel="noopener"
+              className="btn btn-outline"
+              style={{ width: isMobile ? '100%' : 'auto', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <Download size={18} aria-hidden="true" />
+              Download menu (PDF)
+            </a>
+          </div>
         </div>
 
         {featuredItems.length > 0 ? (

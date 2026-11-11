@@ -5,7 +5,7 @@ RewriteEngine On
 Options -Indexes +FollowSymLinks +ExecCGI
 
 # Allow all file types to be accessed
-<FilesMatch "\.(html|htm|js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot)$">
+<FilesMatch "\.(html|htm|js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot|pdf|webp)$">
     Order allow,deny
     Allow from all
 </FilesMatch>
@@ -39,7 +39,7 @@ RewriteRule ^(.*)$ $1/index.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/index.html$
-RewriteCond %{REQUEST_URI} !\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|json)$
+RewriteCond %{REQUEST_URI} !\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot|json|pdf)$
 RewriteRule ^(.*)$ /index.html [L]
 
 # Enable compression
@@ -57,6 +57,7 @@ RewriteRule ^(.*)$ /index.html [L]
     AddType image/jpeg jpg jpeg
     AddType image/gif gif
     AddType image/webp webp
+    AddType application/pdf pdf
 </IfModule>
 
 # Cache static assets
